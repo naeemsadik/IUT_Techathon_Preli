@@ -6,7 +6,7 @@ This phase implements only the Discord bot-facing foundation from the larger Off
 
 ```text
 Discord Bot
-  | commands: !status, !room, !usage
+  | commands: !status, !room, !usage, !ask
   v
 ApiClient
   | REST
@@ -23,6 +23,10 @@ FastAPI /ws/alerts
   | mock alert events
   v
 Discord Bot alert listener
+  v
+Groq LLM client
+  v
+Friendly Discord message
 ```
 
 ## Boundaries
@@ -31,6 +35,7 @@ Discord Bot alert listener
 - Services coordinate repository calls and future business logic.
 - Repositories provide data access and are replaceable.
 - Discord commands format data and never contain HTTP code.
+- Discord commands pass deterministic responses through the LLM client when configured.
 - Shared models define the API contract for both backend and bot.
 
 ## Future Replacement Path

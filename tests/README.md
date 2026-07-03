@@ -1,7 +1,7 @@
 Purpose: automated validation for Phase 1.
 
 Responsibilities:
-- Verify repository, service, route, formatting, and API client behavior.
+- Verify repository, service, route, formatting, API client, and LLM client behavior.
 - Protect the replaceable interfaces that future phases will build on.
 
 Future extension:

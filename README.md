@@ -10,7 +10,7 @@ The simulator, dashboard, database, Redis, real alert engine, power calculations
 - `backend/` exposes bot-facing REST endpoints and `/ws/alerts`.
 - `backend/app/repositories/` hides mock data behind `BotRepository`.
 - `backend/app/services/` contains the service layer used by routes.
-- `bot/` contains Discord prefix commands, the reusable `ApiClient`, and the alert listener.
+- `bot/` contains Discord prefix commands, the reusable `ApiClient`, the Groq LLM client, and the alert listener.
 
 The intended future swap is:
 
@@ -53,7 +53,7 @@ Available endpoints:
 
 ## Run Bot
 
-Set `DISCORD_TOKEN`, `API_BASE_URL`, `ALERT_CHANNEL_ID`, and `COMMAND_PREFIX` in `bot/.env`, then run:
+Set `DISCORD_TOKEN`, `API_BASE_URL`, `ALERT_CHANNEL_ID`, `COMMAND_PREFIX`, `GROQ_API_KEY`, `GROQ_MODEL`, and `LLM_ENABLED` in `bot/.env`, then run:
 
 ```bash
 python -m bot.bot
@@ -64,8 +64,9 @@ Commands:
 - `!status`
 - `!room Drawing Room`
 - `!usage`
+- `!ask Why is the power high?`
 
-The bot also connects to `/ws/alerts` and posts fake alerts to the configured Discord channel.
+The bot also connects to `/ws/alerts` and posts fake alerts to the configured Discord channel. When Groq is configured, command responses and alert messages are rewritten into friendly conversational replies. If Groq is unavailable, the bot falls back to deterministic formatted text.
 
 ## Testing
 
@@ -73,7 +74,7 @@ The bot also connects to `/ws/alerts` and posts fake alerts to the configured Di
 pytest
 ```
 
-Tests cover the mock repository, service layer, FastAPI routes with dependency overrides, command formatting, and the mock API client transport.
+Tests cover the mock repository, service layer, FastAPI routes with dependency overrides, command formatting, the mock API client transport, and the Groq LLM client transport.
 
 ## Future Phases
 
