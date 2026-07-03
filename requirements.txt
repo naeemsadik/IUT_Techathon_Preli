@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+discord.py
+pydantic>=2
+httpx
+python-dotenv
+websockets
+pytest
+pytest-asyncio
