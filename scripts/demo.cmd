@@ -37,9 +37,9 @@ if not exist "%REPO_ROOT%\.venv\Scripts\python.exe" (
     call ".venv\Scripts\python.exe" -m pip install -r requirements.txt || goto :error
 )
 
-if not exist "%REPO_ROOT%\backend\.env" (
-    echo [setup] Creating backend\.env from example
-    copy /Y "%REPO_ROOT%\backend\.env.example" "%REPO_ROOT%\backend\.env" >nul
+if not exist "%REPO_ROOT%\iut_server\.env" (
+    echo [setup] Creating iut_server\.env from example
+    copy /Y "%REPO_ROOT%\iut_server\.env.example" "%REPO_ROOT%\iut_server\.env" >nul
 )
 
 if not exist "%LOG_DIR%" mkdir "%LOG_DIR%"
@@ -54,7 +54,7 @@ if not exist "%PY%" (
 
 REM ---- launch each component in its own window ----------------------------
 echo [start] Backend on http://127.0.0.1:8000
-start "Office-Energy / Backend" /B cmd /c "set PYTHONUNBUFFERED=1 && cd /d "%REPO_ROOT%" && "%PY%" -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 1>"%LOG_DIR%\backend.out.log" 2>"%LOG_DIR%\backend.err.log""
+start "Office-Energy / Backend" /B cmd /c "set PYTHONUNBUFFERED=1 && cd /d "%REPO_ROOT%" && "%PY%" -m uvicorn iut_server.app.main:app --host 127.0.0.1 --port 8000 1>"%LOG_DIR%\backend.out.log" 2>"%LOG_DIR%\backend.err.log""
 
 REM Give the backend a moment to bind to port 8000 before the simulator starts.
 ping -n 3 127.0.0.1 >nul

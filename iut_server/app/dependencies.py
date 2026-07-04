@@ -2,15 +2,15 @@
 
 from fastapi import Request
 
-from backend.app.alerts import AlertEngine
-from backend.app.config import BackendSettings, get_settings
-from backend.app.persistence.database import Database
-from backend.app.repositories.bot_repository import BotRepository
-from backend.app.repositories.real_repository import RealBotRepository
-from backend.app.services.bot_service import BotService
-from backend.app.state import HotStateStore
-from backend.app.websocket.live_state import LiveStateWebSocketManager
-from backend.app.websocket.manager import AlertWebSocketManager
+from iut_server.app.alerts import AlertEngine
+from iut_server.app.config import BackendSettings, get_settings
+from iut_server.app.persistence.database import Database
+from iut_server.app.repositories.bot_repository import BotRepository
+from iut_server.app.repositories.real_repository import RealBotRepository
+from iut_server.app.services.bot_service import BotService
+from iut_server.app.state import HotStateStore
+from iut_server.app.websocket.live_state import LiveStateWebSocketManager
+from iut_server.app.websocket.manager import AlertWebSocketManager
 
 
 def get_hot_store(request: Request) -> HotStateStore:

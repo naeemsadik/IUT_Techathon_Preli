@@ -6,8 +6,8 @@ import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
 
-from backend.app.persistence.models import ALL_DDL, AlertLogRow, StateTransitionRow
-from backend.app.state import DeviceRecord
+from iut_server.app.persistence.models import ALL_DDL, AlertLogRow, StateTransitionRow
+from iut_server.app.state import DeviceRecord
 
 
 class Database:

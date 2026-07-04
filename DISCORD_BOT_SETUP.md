@@ -71,7 +71,7 @@ In one terminal:
 
 ```bash
 .venv\Scripts\activate
-uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
+uvicorn iut_server.app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 Check that the backend works:

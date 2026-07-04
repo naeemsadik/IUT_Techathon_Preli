@@ -9,7 +9,7 @@ from typing import Any
 
 from fastapi import WebSocket
 
-from backend.app.state import DeviceRecord
+from iut_server.app.state import DeviceRecord
 
 logger = logging.getLogger(__name__)
 

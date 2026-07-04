@@ -49,9 +49,9 @@ function Stop-Demo {
 }
 
 function Start-Demo {
-    if (-not (Test-Path (Join-Path $RepoRoot "backend/.env"))) {
-        Write-Host "[setup] Creating backend/.env from example"
-        Copy-Item (Join-Path $RepoRoot "backend/.env.example") (Join-Path $RepoRoot "backend/.env")
+    if (-not (Test-Path (Join-Path $RepoRoot "iut_server/.env"))) {
+        Write-Host "[setup] Creating iut_server/.env from example"
+        Copy-Item (Join-Path $RepoRoot "iut_server/.env.example") (Join-Path $RepoRoot "iut_server/.env")
     }
 
     Ensure-Venv
@@ -64,7 +64,7 @@ function Start-Demo {
     # 1. Backend
     Write-Host "[start] Backend (uvicorn) on http://127.0.0.1:8000"
     $p = Start-Process -FilePath $python `
-        -ArgumentList @("-m", "uvicorn", "backend.app.main:app", "--host", "127.0.0.1", "--port", "8000") `
+        -ArgumentList @("-m", "uvicorn", "iut_server.app.main:app", "--host", "127.0.0.1", "--port", "8000") `
         -WorkingDirectory $RepoRoot `
         -RedirectStandardOutput (Join-Path $LogDir "backend.out.log") `
         -RedirectStandardError  (Join-Path $LogDir "backend.err.log") `

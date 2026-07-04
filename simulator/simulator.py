@@ -71,7 +71,7 @@ RATED_WATTAGE: dict[str, int] = {
 
 
 def build_device_manifest() -> list[dict[str, str]]:
-    """Return the canonical 15-device manifest matching backend/app/state.py.
+    """Return the canonical 15-device manifest matching iut_server/app/state.py.
 
     2 fans + 3 lights per room across 3 rooms = 15 devices.
     """

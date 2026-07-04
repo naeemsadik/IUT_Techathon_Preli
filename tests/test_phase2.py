@@ -8,9 +8,9 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from fastapi.testclient import TestClient
 
-from backend.app.config import get_settings
-from backend.app.main import create_app
-from backend.app.state import DEVICE_MANIFEST
+from iut_server.app.config import get_settings
+from iut_server.app.main import create_app
+from iut_server.app.state import DEVICE_MANIFEST
 
 
 @pytest.fixture
@@ -148,7 +148,7 @@ def test_off_hours_alert_fires(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        "backend.app.alerts.AlertEngine.is_office_hours",
+        "iut_server.app.alerts.AlertEngine.is_office_hours",
         lambda self, now: False,
     )
 

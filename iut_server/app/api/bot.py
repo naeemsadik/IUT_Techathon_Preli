@@ -5,8 +5,8 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from backend.app.dependencies import get_bot_service
-from backend.app.services.bot_service import BotService, RoomNotFoundError
+from iut_server.app.dependencies import get_bot_service
+from iut_server.app.services.bot_service import BotService, RoomNotFoundError
 from shared.models import APIResponse, OfficeStatus, Room, Usage
 
 logger = logging.getLogger(__name__)

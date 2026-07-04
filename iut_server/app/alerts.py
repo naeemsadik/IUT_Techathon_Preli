@@ -7,15 +7,15 @@ import logging
 from datetime import UTC, datetime, time
 from uuid import uuid4
 
-from backend.app.config import BackendSettings
-from backend.app.persistence.database import Database
-from backend.app.state import (
+from iut_server.app.config import BackendSettings
+from iut_server.app.persistence.database import Database
+from iut_server.app.state import (
     ROOM_SLUGS,
     DeviceRecord,
     HotStateStore,
     device_display_name,
 )
-from backend.app.websocket.manager import AlertWebSocketManager
+from iut_server.app.websocket.manager import AlertWebSocketManager
 from shared.models import Alert
 
 logger = logging.getLogger(__name__)

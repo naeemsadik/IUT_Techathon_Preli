@@ -2,7 +2,7 @@
 
 import pytest
 
-from backend.app.services.bot_service import BotService, RoomNotFoundError
+from iut_server.app.services.bot_service import BotService, RoomNotFoundError
 
 
 @pytest.mark.asyncio

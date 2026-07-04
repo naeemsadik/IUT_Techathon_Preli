@@ -1,5 +1,5 @@
 # =============================================================================
-#  Office Energy Monitoring — Backend Dockerfile
+#  Office Energy Monitoring — IUT Server Dockerfile
 #  Multi-stage, non-root, optimized for Coolify / Contabo VPS deployment.
 # =============================================================================
 
@@ -40,8 +40,9 @@ WORKDIR /app
 # Copy installed Python packages from the builder.
 COPY --from=builder /install /usr/local
 
-# Copy the application source.
-COPY backend ./backend
+# Copy the application source without local env files.
+COPY iut_server/__init__.py ./iut_server/__init__.py
+COPY iut_server/app ./iut_server/app
 COPY shared ./shared
 
 # Persistent data directory (mount a Coolify volume here in production).
@@ -55,10 +56,10 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD python -c "import urllib.request, sys; \
 sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health').status == 200 else 1)"
 
-CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "iut_server.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 
 # Build-time labels (overridden by Coolify).
-LABEL org.opencontainers.image.title="office-energy-backend" \
-      org.opencontainers.image.description="Office energy monitoring FastAPI backend" \
-      org.opencontainers.image.source="https://github.com/<you>/IUT_Techathon_Preli"
+LABEL org.opencontainers.image.title="office-energy-iut-server" \
+      org.opencontainers.image.description="Office energy monitoring FastAPI IUT server" \
+      org.opencontainers.image.source="https://github.com/naeemsadik/IUT_Techathon_Preli"

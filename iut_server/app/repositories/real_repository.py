@@ -5,8 +5,8 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 
-from backend.app.persistence.database import Database
-from backend.app.state import ROOM_SLUGS, HotStateStore
+from iut_server.app.persistence.database import Database
+from iut_server.app.state import ROOM_SLUGS, HotStateStore
 from shared.models import OfficeStatus, Room, RoomUsage, Usage
 
 

@@ -2,8 +2,8 @@
 
 from datetime import UTC, datetime
 
-from backend.app.config import BackendSettings, get_settings
-from backend.app.repositories.bot_repository import BotRepository
+from iut_server.app.config import BackendSettings, get_settings
+from iut_server.app.repositories.bot_repository import BotRepository
 from shared.models import OfficeStatus, Room, Usage
 
 

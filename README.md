@@ -41,7 +41,7 @@ pip install -r requirements.txt
 ### 2. Configure environment
 
 ```powershell
-copy backend\.env.example backend\.env
+copy iut_server\.env.example iut_server\.env
 copy bot\.env.example bot\.env      # optional — only needed for Discord bot
 ```
 
@@ -102,7 +102,7 @@ pytest
 
 ```text
 IUT_Techathon_Preli/
-├── backend/app/          # FastAPI server (ingestion, state, alerts, SQLite)
+├── iut_server/app/          # FastAPI server (ingestion, state, alerts, SQLite)
 ├── bot/                  # Discord bot
 ├── shared/models/        # Pydantic API contracts
 ├── simulator/            # 15-device synthetic data source (Phase 3)
@@ -126,7 +126,7 @@ IUT_Techathon_Preli/
 From the repository root with the virtual environment activated:
 
 ```powershell
-uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
+uvicorn iut_server.app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 ### API Endpoints
@@ -145,7 +145,7 @@ Interactive docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
 ### Backend Environment Variables
 
-Edit `backend/.env` (copy from `backend/.env.example`):
+Edit `iut_server/.env` (copy from `iut_server/.env.example`):
 
 | Variable | Default | Description |
 |---|---|---|
@@ -278,7 +278,7 @@ Open separate terminals (or use `scripts/demo.ps1` for backend + simulator):
 
 | Terminal | Command | URL / Output |
 |---|---|---|
-| 1 — Backend | `uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload` | <http://127.0.0.1:8000> |
+| 1 — Backend | `uvicorn iut_server.app.main:app --host 127.0.0.1 --port 8000 --reload` | <http://127.0.0.1:8000> |
 | 2 — Simulator | `python -m simulator.simulator` | POSTs to `/api/ingest` |
 | 3 — Frontend | `cd frontend && npm run dev` | <http://localhost:3000> |
 | 4 — Discord bot (optional) | `python -m bot.bot` | Listens on `/ws/alerts` |
@@ -306,7 +306,7 @@ pytest tests/test_phase2.py -v   # Phase 2 integration only
 
 ### Demo alert mode
 
-Set in `backend/.env`, then restart the backend:
+Set in `iut_server/.env`, then restart the backend:
 
 ```env
 DURATION_THRESHOLD_SECONDS=20
@@ -342,7 +342,7 @@ Rated wattages used in examples: **fan 60W**, **light 15W**.
 | Discord bot cannot connect | Verify backend is running and `API_BASE_URL` in `bot/.env` is correct |
 | No alerts in Discord | Check `ALERT_CHANNEL_ID`, confirm device is ON outside office hours or duration threshold met |
 | `pytest` import errors | Run from repo root with venv activated; `pythonpath` is set in `pyproject.toml` |
-| SQLite permission errors | Ensure `data/` directory is writable or change `SQLITE_PATH` in `backend/.env` |
+| SQLite permission errors | Ensure `data/` directory is writable or change `SQLITE_PATH` in `iut_server/.env` |
 
 ---
 

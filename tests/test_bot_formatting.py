@@ -1,7 +1,7 @@
 """Discord message formatting tests."""
 
 from bot.commands.formatting import format_room, format_status, format_usage
-from backend.app.repositories.mock_repository import MockBotRepository
+from iut_server.app.repositories.mock_repository import MockBotRepository
 
 
 async def test_format_status_is_human_readable() -> None:

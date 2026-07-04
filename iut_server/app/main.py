@@ -8,16 +8,16 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.app.alerts import AlertEngine
-from backend.app.api.bot import router as bot_router
-from backend.app.api.history import router as history_router
-from backend.app.api.ingest import router as ingest_router
-from backend.app.api.websocket import router as websocket_router
-from backend.app.config import get_settings
-from backend.app.persistence.database import Database
-from backend.app.state import HotStateStore
-from backend.app.websocket.live_state import LiveStateWebSocketManager
-from backend.app.websocket.manager import AlertWebSocketManager
+from iut_server.app.alerts import AlertEngine
+from iut_server.app.api.bot import router as bot_router
+from iut_server.app.api.history import router as history_router
+from iut_server.app.api.ingest import router as ingest_router
+from iut_server.app.api.websocket import router as websocket_router
+from iut_server.app.config import get_settings
+from iut_server.app.persistence.database import Database
+from iut_server.app.state import HotStateStore
+from iut_server.app.websocket.live_state import LiveStateWebSocketManager
+from iut_server.app.websocket.manager import AlertWebSocketManager
 
 logger = logging.getLogger(__name__)
 

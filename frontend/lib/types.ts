@@ -1,6 +1,6 @@
 // =============================================================================
 //  Shared types — mirror the backend Pydantic models and the /api/history
-//  shape produced by backend/app/api/history.py.
+//  shape produced by iut_server/app/api/history.py.
 // =============================================================================
 
 export type DeviceState = "ON" | "OFF";
@@ -112,7 +112,7 @@ export interface LiveAlert {
   created_at: string;
 }
 
-// ---- Device manifest (mirrors backend/app/state.py) ----
+// ---- Device manifest (mirrors iut_server/app/state.py) ----
 
 export interface DeviceSpec {
   device_id: string;

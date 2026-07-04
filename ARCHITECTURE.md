@@ -23,12 +23,12 @@ The full system architecture is documented in **[doc/ARCHITECTURE.md](doc/ARCHIT
 | Layer | Role |
 |---|---|
 | `shared/models/` | Pydantic API contracts shared by backend and bot |
-| `backend/app/api/` | HTTP and WebSocket routes |
-| `backend/app/services/` | Business coordination (`BotService`) |
-| `backend/app/repositories/` | Data access (`RealBotRepository` in production) |
-| `backend/app/state.py` | In-memory hot state |
-| `backend/app/persistence/` | SQLite cold state |
-| `backend/app/alerts.py` | Dual-path alerting |
+| `iut_server/app/api/` | HTTP and WebSocket routes |
+| `iut_server/app/services/` | Business coordination (`BotService`) |
+| `iut_server/app/repositories/` | Data access (`RealBotRepository` in production) |
+| `iut_server/app/state.py` | In-memory hot state |
+| `iut_server/app/persistence/` | SQLite cold state |
+| `iut_server/app/alerts.py` | Dual-path alerting |
 | `bot/` | Discord commands, API client, LLM client, alert listener |
 
 ## Phase History

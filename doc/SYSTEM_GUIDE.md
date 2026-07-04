@@ -151,7 +151,7 @@ All devices start **OFF** with `power_draw_w: 0` until the first ingest updates 
 
 ### Hot state (in-memory)
 
-- **File:** `backend/app/state.py`
+- **File:** `iut_server/app/state.py`
 - **Key:** `device_id`
 - **Fields:** `room`, `device_type`, `status` (`on`/`off`), `power_draw_w`, `last_changed`
 - **Used for:** `/api/status`, `/api/room/{name}`, alert duration checks, live WebSocket diffs
@@ -159,7 +159,7 @@ All devices start **OFF** with `power_draw_w: 0` until the first ingest updates 
 
 ### Cold state (SQLite)
 
-- **File:** `backend/app/persistence/database.py`
+- **File:** `iut_server/app/persistence/database.py`
 - **Database path:** `data/office_energy.db` (configurable via `SQLITE_PATH`)
 - **Tables:**
   - `state_transitions` — append-only log of every state change (for kWh and history)
@@ -170,7 +170,7 @@ All devices start **OFF** with `power_draw_w: 0` until the first ingest updates 
 
 ## 5. Alert Engine
 
-**File:** `backend/app/alerts.py`
+**File:** `iut_server/app/alerts.py`
 
 Two independent evaluation paths feed the same alert creation logic:
 
@@ -193,7 +193,7 @@ Before firing, the engine checks SQLite for an existing **unresolved** alert wit
 
 ### Demo mode
 
-Shrink thresholds in `backend/.env` for quick demos:
+Shrink thresholds in `iut_server/.env` for quick demos:
 
 ```env
 DURATION_THRESHOLD_SECONDS=20
@@ -284,7 +284,7 @@ pip install -r requirements.txt
 ### Configure environment
 
 ```powershell
-copy backend\.env.example backend\.env
+copy iut_server\.env.example iut_server\.env
 copy bot\.env.example bot\.env
 ```
 
@@ -293,7 +293,7 @@ Edit `bot\.env` with your Discord token, channel ID, and optional Groq key. See 
 ### Start the backend
 
 ```powershell
-uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
+uvicorn iut_server.app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 ### Start the Discord bot (optional)
@@ -431,7 +431,7 @@ After turning on `work_room_1_fan_1` at 60W, `/api/status` should show `total_wa
 
 ### 8.4 Test off-hours alert quickly
 
-Set office hours so the current time is always "outside hours" in `backend/.env`:
+Set office hours so the current time is always "outside hours" in `iut_server/.env`:
 
 ```env
 OFFICE_START=23:59
@@ -466,7 +466,7 @@ Full bot setup: [DISCORD_BOT_SETUP.md](../DISCORD_BOT_SETUP.md)
 ```text
 /
 ├── shared/models/          # Pydantic API contracts (do not break)
-├── backend/app/
+├── iut_server/app/
 │   ├── main.py             # App factory + lifespan
 │   ├── config.py           # Env-based thresholds
 │   ├── state.py            # Hot state + device manifest
@@ -494,7 +494,7 @@ Full bot setup: [DISCORD_BOT_SETUP.md](../DISCORD_BOT_SETUP.md)
 
 ## 10. Environment Variables
 
-### Backend (`backend/.env`)
+### Backend (`iut_server/.env`)
 
 | Variable | Default | Description |
 |---|---|---|

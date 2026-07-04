@@ -48,7 +48,7 @@ start_demo() {
     PIDS=()
 
     echo "[start] Backend (uvicorn) on http://127.0.0.1:8000"
-    "$PYTHON" -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 \
+    "$PYTHON" -m uvicorn iut_server.app.main:app --host 127.0.0.1 --port 8000 \
         > "$LOG_DIR/backend.out.log" 2> "$LOG_DIR/backend.err.log" &
     PIDS+=($!)
     sleep 2

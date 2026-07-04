@@ -4,7 +4,7 @@ This project deploys as two public pieces:
 
 | Component | Where | How |
 |---|---|---|
-| Backend (FastAPI + SQLite) | Contabo VPS via Coolify | Root `docker-compose.yaml` |
+| IUT server (FastAPI + SQLite) | Contabo VPS via Coolify | Root `docker-compose.yaml` |
 | Frontend (Next.js) | Vercel | Git integration with root directory `frontend` |
 | Simulator | Local or VPS optional process | `python -m simulator.simulator` |
 | Discord bot | Local or VPS optional process | `python -m bot.bot` |
@@ -35,11 +35,11 @@ In Coolify:
 1. Add a new resource from your Git repository.
 2. Choose the Docker Compose deployment option.
 3. Set the compose file path to `docker-compose.yaml`.
-4. Select the `backend` service.
-5. Assign your API domain to the `backend` service on container port `8000`.
+4. Select the `iut_server` service.
+5. Assign your API domain to the `iut_server` service on container port `8000`.
 6. Set the health check path to `/api/health`.
 
-The backend Dockerfile can stay in the repository because Compose uses it to
+The `iut_server/Dockerfile` can stay in the repository because Compose uses it to
 build the image. The deployment entry point in Coolify is the root
 `docker-compose.yaml`, not a Dockerfile resource.
 
@@ -199,7 +199,7 @@ on port `8000`.
 |---|---|---|
 | Frontend shows `Failed to fetch` | Backend CORS does not include the Vercel domain | Update `CORS_ALLOW_ORIGINS` in Coolify |
 | WebSocket reconnects forever | WS URL uses `ws://` in production | Set `NEXT_PUBLIC_WS_BASE_URL=wss://api.yourdomain.com` |
-| Backend returns 502 | Container crashed or health check failed | Check Coolify logs for the `backend` service |
+| IUT server returns 502 | Container crashed or health check failed | Check Coolify logs for the `iut_server` service |
 | History disappears after redeploy | Missing persistent volume | Keep `office-energy-data` mounted to `/app/data` |
 | Docker says host port already in use | Compose published `8000:8000` | Remove `ports` and use `expose` plus a Coolify domain |
 

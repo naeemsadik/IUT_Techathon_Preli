@@ -4,21 +4,21 @@ import logging
 from datetime import UTC, datetime
 from fastapi import APIRouter, Depends, HTTPException
 
-from backend.app.alerts import AlertEngine
-from backend.app.dependencies import (
+from iut_server.app.alerts import AlertEngine
+from iut_server.app.dependencies import (
     get_alert_engine,
     get_live_state_ws,
     get_database,
     get_hot_store,
 )
-from backend.app.persistence.database import Database
-from backend.app.schemas.ingestion import (
+from iut_server.app.persistence.database import Database
+from iut_server.app.schemas.ingestion import (
     HeartbeatPayload,
     IngestResponse,
     StateChangePayload,
 )
-from backend.app.state import DeviceUpdateInput, HotStateStore
-from backend.app.websocket.live_state import LiveStateWebSocketManager
+from iut_server.app.state import DeviceUpdateInput, HotStateStore
+from iut_server.app.websocket.live_state import LiveStateWebSocketManager
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["ingest"])

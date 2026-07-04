@@ -13,8 +13,8 @@ from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, Query
 
-from backend.app.dependencies import get_database
-from backend.app.persistence.database import Database
+from iut_server.app.dependencies import get_database
+from iut_server.app.persistence.database import Database
 from shared.models import APIResponse
 
 logger = logging.getLogger(__name__)
@@ -169,7 +169,7 @@ async def get_history(
     alerts = database.query_alerts_since(since)
 
     # --- Compose response -----------------------------------------------------
-    from backend.app.state import ROOM_SLUGS  # local import to avoid cycles
+    from iut_server.app.state import ROOM_SLUGS  # local import to avoid cycles
 
     rooms_payload: list[dict[str, Any]] = []
     for slug, display_name in ROOM_SLUGS.items():

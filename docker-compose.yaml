@@ -1,14 +1,14 @@
-# Root Docker Compose file for Coolify backend deployment.
+# Root Docker Compose file for Coolify IUT server deployment.
 #
 # Coolify should deploy this as a Docker Compose resource. The service listens
 # on container port 8000; do not publish "8000:8000" on the VPS because Coolify's
 # proxy should own public traffic.
 services:
-  backend:
+  iut_server:
     build:
       context: .
-      dockerfile: backend/Dockerfile
-    image: office-energy-backend:latest
+      dockerfile: iut_server/Dockerfile
+    image: office-energy-iut-server:latest
     restart: unless-stopped
     expose:
       - "8000"

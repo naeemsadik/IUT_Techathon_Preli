@@ -56,14 +56,14 @@ python -m venv .venv
 pip install -r requirements.txt
 
 # Backend env (one-time)
-copy backend\.env.example backend\.env
+copy iut_server\.env.example iut_server\.env
 
 # Optional: bot env (one-time)
 copy bot\.env.example bot\.env
 # ...then edit bot/.env with your DISCORD_TOKEN + ALERT_CHANNEL_ID
 ```
 
-For a fast demo, edit `backend/.env` to shrink the duration threshold:
+For a fast demo, edit `iut_server/.env` to shrink the duration threshold:
 
 ```env
 DURATION_THRESHOLD_SECONDS=20
@@ -79,7 +79,7 @@ This makes the "all devices in one room ON for too long" alert fire within
 Terminal 1 — **Backend**:
 
 ```powershell
-uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
+uvicorn iut_server.app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 Terminal 2 — **Simulator**:
@@ -120,7 +120,7 @@ python -m bot.bot
    ```
 
 4. **Demo an off-hours alert** — set `OFFICE_END` and `OFFICE_START` in
-   `backend/.env` to bracket a window that excludes right now (e.g.
+   `iut_server/.env` to bracket a window that excludes right now (e.g.
    `OFFICE_START=23:59`, `OFFICE_END=23:59`). Restart the backend. The
    next time the simulator turns a device ON, an off-hours alert fires on
    `/ws/alerts`.
@@ -136,11 +136,11 @@ python -m bot.bot
 7. **Show the engine code paths**:
 
    ```
-   backend/app/ingest.py       — ingestion gateway
-   backend/app/state.py        — hot state
-   backend/app/alerts.py       — alert engine (dual path)
-   backend/app/persistence/    — SQLite cold state
-   backend/app/websocket/      — WS managers
+   iut_server/app/ingest.py       — ingestion gateway
+   iut_server/app/state.py        — hot state
+   iut_server/app/alerts.py       — alert engine (dual path)
+   iut_server/app/persistence/    — SQLite cold state
+   iut_server/app/websocket/      — WS managers
    simulator/simulator.py      — synthetic data source
    frontend/                   — Next.js frontend
    ```

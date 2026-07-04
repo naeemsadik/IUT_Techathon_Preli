@@ -63,7 +63,7 @@ flowchart LR
 
 ## 4. Device Manifest
 
-The simulator must use the **same device IDs** as the backend (`backend/app/state.py`). Do not invent new IDs.
+The simulator must use the **same device IDs** as the backend (`iut_server/app/state.py`). Do not invent new IDs.
 
 | Room slug | Display name | Devices |
 |---|---|---|
@@ -201,7 +201,7 @@ ROOMS = {
     "work_room_2": {"interval": 7, "source_id": "esp32-work-room-2"},
 }
 
-# Build device list from same IDs as backend/app/state.py
+# Build device list from same IDs as iut_server/app/state.py
 # Track per-room sequence counters
 # Track per-device status and power_draw_w in memory
 
@@ -254,7 +254,7 @@ Add to a `simulator/.env.example` or document in the root README:
 ### Step 1 — Start the backend
 
 ```powershell
-uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
+uvicorn iut_server.app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 ### Step 2 — Start the simulator
@@ -285,7 +285,7 @@ Values should match the API and update as the simulator runs.
 
 ### Step 5 — Verify alerts
 
-For quick demo, set in `backend/.env`:
+For quick demo, set in `iut_server/.env`:
 
 ```env
 DURATION_THRESHOLD_SECONDS=20

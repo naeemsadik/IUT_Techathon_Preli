@@ -3,10 +3,10 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from backend.app.dependencies import get_bot_service
-from backend.app.main import create_app
-from backend.app.repositories.mock_repository import MockBotRepository
-from backend.app.services.bot_service import BotService
+from iut_server.app.dependencies import get_bot_service
+from iut_server.app.main import create_app
+from iut_server.app.repositories.mock_repository import MockBotRepository
+from iut_server.app.services.bot_service import BotService
 
 
 @pytest.fixture

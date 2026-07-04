@@ -2,7 +2,7 @@
 
 import pytest
 
-from backend.app.repositories.mock_repository import MockBotRepository
+from iut_server.app.repositories.mock_repository import MockBotRepository
 
 
 @pytest.mark.asyncio

@@ -20,14 +20,14 @@ Visualization favors low-latency delivery: WebSockets push updates to the fronte
 | Component | Status | Location |
 |---|---|---|
 | Shared Pydantic API contracts | Done (Phase 1) | `shared/models/` |
-| FastAPI REST (`/api/status`, `/api/room`, `/api/usage`, `/api/health`) | Done | `backend/app/api/bot.py` |
-| Ingestion gateway (`POST /api/ingest`) | Done (Phase 2) | `backend/app/api/ingest.py` |
-| Hot state (in-memory, 15 devices) | Done (Phase 2) | `backend/app/state.py` |
-| Cold state (SQLite transitions + alerts) | Done (Phase 2) | `backend/app/persistence/` |
-| RealBotRepository + kWh calculation | Done (Phase 2) | `backend/app/repositories/real_repository.py` |
-| Dual-path alert engine | Done (Phase 2) | `backend/app/alerts.py` |
-| Alert WebSocket (`/ws/alerts`) | Done (Phase 2) | `backend/app/websocket/manager.py` |
-| Live state WebSocket (`/ws/live`) | Done | `backend/app/websocket/live_state.py` |
+| FastAPI REST (`/api/status`, `/api/room`, `/api/usage`, `/api/health`) | Done | `iut_server/app/api/bot.py` |
+| Ingestion gateway (`POST /api/ingest`) | Done (Phase 2) | `iut_server/app/api/ingest.py` |
+| Hot state (in-memory, 15 devices) | Done (Phase 2) | `iut_server/app/state.py` |
+| Cold state (SQLite transitions + alerts) | Done (Phase 2) | `iut_server/app/persistence/` |
+| RealBotRepository + kWh calculation | Done (Phase 2) | `iut_server/app/repositories/real_repository.py` |
+| Dual-path alert engine | Done (Phase 2) | `iut_server/app/alerts.py` |
+| Alert WebSocket (`/ws/alerts`) | Done (Phase 2) | `iut_server/app/websocket/manager.py` |
+| Live state WebSocket (`/ws/live`) | Done | `iut_server/app/websocket/live_state.py` |
 | Discord bot (commands + alert listener) | Done (Phase 1) | `bot/` |
 | Groq LLM integration | Done (Phase 1) | `bot/services/llm_client.py` |
 | `simulator.py` | Implemented (Phase 3) | `simulator/simulator.py` |
@@ -103,13 +103,13 @@ Ingestion uses lowercase `on`/`off` and snake_case room slugs. The REST API expo
 
 | Module | Responsibility |
 |---|---|
-| `backend/app/api/ingest.py` | Ingestion gateway |
-| `backend/app/state.py` | Hot state store + device manifest |
-| `backend/app/persistence/` | SQLite cold state |
-| `backend/app/alerts.py` | Event-driven + periodic alert evaluation |
-| `backend/app/repositories/real_repository.py` | Bot-facing reads from hot state + usage from SQLite |
-| `backend/app/api/bot.py` | REST endpoints for Discord bot |
-| `backend/app/api/websocket.py` | `/ws/alerts`, `/ws/live` |
+| `iut_server/app/api/ingest.py` | Ingestion gateway |
+| `iut_server/app/state.py` | Hot state store + device manifest |
+| `iut_server/app/persistence/` | SQLite cold state |
+| `iut_server/app/alerts.py` | Event-driven + periodic alert evaluation |
+| `iut_server/app/repositories/real_repository.py` | Bot-facing reads from hot state + usage from SQLite |
+| `iut_server/app/api/bot.py` | REST endpoints for Discord bot |
+| `iut_server/app/api/websocket.py` | `/ws/alerts`, `/ws/live` |
 
 **Communication channels:**
 
@@ -136,7 +136,7 @@ Redis was evaluated and deferred — 15 devices do not justify the operational o
 
 ## 6. Core Logic: Alerting Engine
 
-**File:** `backend/app/alerts.py`
+**File:** `iut_server/app/alerts.py`
 
 ### 6.1 Alert Rules
 
@@ -177,7 +177,7 @@ Redis was evaluated and deferred — 15 devices do not justify the operational o
 
 ## 8. Configuration and Demo Mode
 
-**File:** `backend/app/config.py` — loaded from `backend/.env`
+**File:** `iut_server/app/config.py` — loaded from `iut_server/.env`
 
 | Variable | Default | Purpose |
 |---|---|---|
@@ -188,7 +188,7 @@ Redis was evaluated and deferred — 15 devices do not justify the operational o
 | `ALERT_SWEEP_INTERVAL_SECONDS` | `30` | Periodic sweep interval |
 | `SQLITE_PATH` | `data/office_energy.db` | SQLite database path |
 
-**Demo mode example** (`backend/.env`):
+**Demo mode example** (`iut_server/.env`):
 
 ```env
 DURATION_THRESHOLD_SECONDS=20
@@ -234,7 +234,7 @@ Restart the backend after changing env vars.
 │   ├── SYSTEM_GUIDE.md            # How the system works + testing
 │   └── SIMULATOR.md               # Phase 3 simulator guide
 ├── shared/models/                 # Pydantic API contracts (shared by backend + bot)
-├── backend/app/
+├── iut_server/app/
 │   ├── main.py                    # App factory, lifespan, sweep task
 │   ├── config.py                  # Env-based settings
 │   ├── state.py                   # Hot state + 15-device manifest
