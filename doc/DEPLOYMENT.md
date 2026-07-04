@@ -149,7 +149,94 @@ you a reliable build gate.
 
 ---
 
-## 4. Port 8000 and Coolify
+## 4. Backend on Render
+
+If deploying the backend as a native Python web service on Render, use:
+
+```text
+Build Command: pip install -r requirements.txt
+Start Command: uvicorn iut_server.app.main:app --host 0.0.0.0 --port $PORT
+```
+
+Use these Render environment variables:
+
+```env
+HOST=0.0.0.0
+PORT=8000
+DEBUG=false
+OFFICE_START=09:00
+OFFICE_END=17:00
+DURATION_THRESHOLD_SECONDS=7200
+DEVICE_DURATION_THRESHOLD_SECONDS=3600
+ALERT_SWEEP_INTERVAL_SECONDS=30
+SQLITE_PATH=data/office_energy.db
+CORS_ALLOW_ORIGINS=https://iut-techathon-preli.vercel.app
+
+# Run the demo generator inside this same Render web service.
+ENABLE_SIMULATOR=true
+SIMULATOR_API_URL=https://iut-techathon-preli.onrender.com
+SIMULATOR_TOGGLE_PROB=0.6
+SIMULATOR_HEARTBEAT_EVERY_N=10
+
+# Optional: run the Discord bot inside this same Render web service.
+ENABLE_DISCORD_BOT=false
+API_BASE_URL=https://iut-techathon-preli.onrender.com
+DISCORD_TOKEN=
+ALERT_CHANNEL_ID=
+COMMAND_PREFIX=!
+LLM_ENABLED=false
+GROQ_API_KEY=
+GROQ_MODEL=llama-3.3-70b-versatile
+```
+
+Do not use `/app/data/office_energy.db` on a native Render Python service. That
+path is for the Docker image, and Render's native runtime cannot create `/app`.
+
+For persistent SQLite history on Render, add a Render disk and mount it at:
+
+```text
+/var/data
+```
+
+Then change the Render env to:
+
+```env
+SQLITE_PATH=/var/data/office_energy.db
+```
+
+Without a disk, `data/office_energy.db` works, but history can be lost after
+redeploys or restarts.
+
+### 4.1 Embedded simulator and bot on Render
+
+For a one-service demo, the FastAPI process can also start the simulator and
+Discord bot as background tasks.
+
+Turn on the simulator:
+
+```env
+ENABLE_SIMULATOR=true
+SIMULATOR_API_URL=https://iut-techathon-preli.onrender.com
+SIMULATOR_TOGGLE_PROB=0.6
+```
+
+Turn on the bot only after adding your Discord credentials:
+
+```env
+ENABLE_DISCORD_BOT=true
+API_BASE_URL=https://iut-techathon-preli.onrender.com
+DISCORD_TOKEN=your-discord-bot-token
+ALERT_CHANNEL_ID=your-alert-channel-id
+COMMAND_PREFIX=!
+LLM_ENABLED=false
+```
+
+If `ENABLE_DISCORD_BOT=true` but `DISCORD_TOKEN` is empty, the server keeps
+running and logs that the bot was disabled.
+
+---
+
+## 5. Port 8000 and Coolify
 
 Using container port `8000` is fine. Coolify runs its platform and proxy outside
 your application container, then routes traffic from your domain to the service's
@@ -176,7 +263,7 @@ on port `8000`.
 
 ---
 
-## 5. Public verification
+## 6. Public verification
 
 1. Open the Vercel frontend.
 2. Confirm the overview page loads without CORS errors.
@@ -193,7 +280,7 @@ on port `8000`.
 
 ---
 
-## 6. Troubleshooting
+## 7. Troubleshooting
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
@@ -201,11 +288,12 @@ on port `8000`.
 | WebSocket reconnects forever | WS URL uses `ws://` in production | Set `NEXT_PUBLIC_WS_BASE_URL=wss://api.yourdomain.com` |
 | IUT server returns 502 | Container crashed or health check failed | Check Coolify logs for the `iut_server` service |
 | History disappears after redeploy | Missing persistent volume | Keep `office-energy-data` mounted to `/app/data` |
+| Render startup fails with `Permission denied: '/app'` | Render native runtime is using Docker SQLite path | Set `SQLITE_PATH=data/office_energy.db` or mount a disk and use `/var/data/office_energy.db` |
 | Docker says host port already in use | Compose published `8000:8000` | Remove `ports` and use `expose` plus a Coolify domain |
 
 ---
 
-## 7. Related Documents
+## 8. Related Documents
 
 - [`DEMO.md`](./DEMO.md) - Local demo walk-through
 - [`SYSTEM_GUIDE.md`](./SYSTEM_GUIDE.md) - System reference

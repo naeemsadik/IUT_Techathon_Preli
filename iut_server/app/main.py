@@ -14,6 +14,10 @@ from iut_server.app.api.history import router as history_router
 from iut_server.app.api.ingest import router as ingest_router
 from iut_server.app.api.websocket import router as websocket_router
 from iut_server.app.config import get_settings
+from iut_server.app.embedded_runtime import (
+    start_embedded_discord_bot,
+    start_embedded_simulator,
+)
 from iut_server.app.persistence.database import Database
 from iut_server.app.state import HotStateStore
 from iut_server.app.websocket.live_state import LiveStateWebSocketManager
@@ -41,15 +45,23 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.alert_engine = alert_engine
 
     sweep_task = asyncio.create_task(alert_engine.run_periodic_sweep())
+    simulator_task = start_embedded_simulator()
+    bot_runtime = start_embedded_discord_bot()
     logger.info("Server started")
     try:
         yield
     finally:
-        sweep_task.cancel()
-        try:
-            await sweep_task
-        except asyncio.CancelledError:
-            pass
+        tasks = [sweep_task]
+        if simulator_task is not None:
+            tasks.append(simulator_task)
+        if bot_runtime is not None:
+            discord_bot, bot_task = bot_runtime
+            await discord_bot.close()
+            tasks.append(bot_task)
+
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
         database.close()
         logger.info("Server stopped")
 
