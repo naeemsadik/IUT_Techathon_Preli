@@ -1,100 +1,75 @@
-# Office Energy Monitoring System
+# IUT Energy Monitor
 
-Monitor office energy usage across three rooms (Drawing Room, Work Room 1, Work Room 2) with a FastAPI backend, SQLite logging, real-time alerts, a Discord bot interface, a synthetic device simulator, and a Next.js frontend.
+A real-time office energy monitoring system for three rooms: Drawing Room,
+Work Room 1, and Work Room 2. The system ingests device state, tracks live power
+usage, stores historical transitions in SQLite, broadcasts live updates over
+WebSockets, and optionally posts alerts to Discord.
 
-**What's working today:** ingestion API, hot/cold state, dual-path alert engine (off-hours, room-duration, per-device-duration), REST + WebSocket endpoints, Discord bot with optional Groq LLM replies, `simulator.py` data source, and the Next.js frontend in `frontend/`.
+Live frontend:
+
+```text
+https://iut-energy-monitor.vercel.app/
+```
+
+Current backend:
+
+```text
+https://iut-techathon-preli.onrender.com
+```
+
+API docs:
+
+```text
+https://iut-techathon-preli.onrender.com/docs
+```
 
 ---
 
-## Prerequisites
+## Features
 
-| Requirement | Notes |
+| Area | What it does |
 |---|---|
-| **Python 3.12+** | Check with `python --version` |
-| **Git** | To clone the repository |
-| **Discord account** | Only if running the Discord bot |
-| **Groq API key** | Optional — bot falls back to plain text without it |
+| Live monitoring | Shows current device states and total wattage per room |
+| Historical analytics | Stores device transitions and calculates usage from SQLite |
+| Real-time updates | Pushes state changes to the frontend through `/ws/live` |
+| Alerts | Detects off-hours usage, room-duration, and per-device-duration issues |
+| Simulator | Generates demo device changes for all 15 devices |
+| Discord bot | Optional command and alert interface |
+| Deployment | Frontend on Vercel, backend on Render |
 
 ---
 
-## Quick Start (5 minutes)
+## Architecture
 
-### 1. Clone and install
-
-```powershell
-git clone <repository-url>
-cd IUT_Techathon_Preli
-
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
+```text
+Simulator / Hardware
+        |
+        | POST /api/ingest
+        v
+iut_server FastAPI backend
+        |-- SQLite history
+        |-- /ws/live to frontend
+        |-- /ws/alerts to Discord bot
+        |
+        v
+Next.js frontend on Vercel
 ```
 
-On macOS/Linux:
+The backend is the source of truth. The frontend reads REST endpoints for initial
+state and analytics, then listens to `/ws/live` for live changes.
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
+---
 
-### 2. Configure environment
+## Tech Stack
 
-```powershell
-copy iut_server\.env.example iut_server\.env
-copy bot\.env.example bot\.env      # optional — only needed for Discord bot
-```
-
-The backend runs with defaults out of the box. The bot requires a Discord token (see [Discord bot setup](#discord-bot-setup) below).
-
-### 3. Start backend + simulator
-
-The demo launcher starts the backend and simulator in one command.
-
-**Windows — pure batch (no PowerShell):**
-
-```cmd
-scripts\demo.cmd            REM start backend + simulator
-scripts\demo.cmd stop       REM stop everything
-```
-
-**Windows — PowerShell** (either `pwsh` for v7+ or `powershell` for v5.1):
-
-```powershell
-powershell -File scripts\demo.ps1              # start everything
-powershell -File scripts\demo.ps1 -WithBot     # also start Discord bot
-powershell -File scripts\demo.ps1 -Stop        # stop everything
-```
-
-**Linux / macOS:**
-
-```bash
-./scripts/demo.sh              # start everything
-./scripts/demo.sh --with-bot   # also start Discord bot
-./scripts/demo.sh --stop       # stop everything
-```
-
-Once it's up:
-
-- **Backend API docs** → <http://127.0.0.1:8000/docs>
-
-Start the frontend from `frontend/`:
-
-```powershell
-cd frontend
-npm install
-npm run dev
-```
-
-- **Frontend** → <http://localhost:3000>
-
-Or run the components manually in separate terminals — see [Running Everything Together](#running-everything-together) below.
-
-### 4. Run tests
-
-```powershell
-pytest
-```
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js 14, React, TypeScript, Tailwind CSS, Recharts, Zustand |
+| Backend | FastAPI, Pydantic v2, SQLite, asyncio |
+| Realtime | WebSockets |
+| Bot | discord.py, httpx, optional Groq LLM |
+| Testing | pytest, pytest-asyncio |
+| Deployment | Vercel frontend, Render backend |
 
 ---
 
@@ -102,247 +77,236 @@ pytest
 
 ```text
 IUT_Techathon_Preli/
-├── iut_server/app/          # FastAPI server (ingestion, state, alerts, SQLite)
-├── bot/                  # Discord bot
-├── shared/models/        # Pydantic API contracts
-├── simulator/            # 15-device synthetic data source (Phase 3)
+├── iut_server/           # FastAPI backend server
+│   ├── app/api/          # REST and WebSocket routes
+│   ├── app/persistence/  # SQLite persistence
+│   ├── app/repositories/ # Bot-facing data access
+│   ├── app/services/     # Business services
+│   └── app/websocket/    # WebSocket managers
 ├── frontend/             # Next.js frontend
-├── scripts/              # One-command demo launchers
-├── examples/             # Sample ingest JSON files
-├── tests/                # pytest suite
-└── doc/                  # Architecture and guides
-    ├── ARCHITECTURE.md   # System design
-    ├── SYSTEM_GUIDE.md   # How it works + detailed testing
-    ├── SIMULATOR.md      # Simulator internals
-    ├── HIGH_LEVEL_DIAGRAMS.md  # Phase 3 system diagrams
-    ├── HARDWARE.md       # Reference ESP32 schematic
-    └── DEMO.md           # Live demo walk-through
+├── simulator/            # Synthetic 15-device data generator
+├── bot/                  # Discord bot
+├── shared/               # Shared Pydantic response models
+├── examples/             # Example ingest payloads
+├── tests/                # Python test suite
+├── doc/                  # Architecture and deployment docs
+├── docker-compose.yaml   # Compose config for Docker/Coolify-style deploys
+├── requirements.txt      # Python dependencies
+└── runtime.txt           # Render Python version
 ```
 
 ---
 
-## Running the Backend
+## Live Environment
 
-From the repository root with the virtual environment activated:
+### Vercel Frontend
+
+Add these environment variables in Vercel:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=https://iut-techathon-preli.onrender.com
+NEXT_PUBLIC_WS_BASE_URL=wss://iut-techathon-preli.onrender.com
+```
+
+Redeploy Vercel after changing `NEXT_PUBLIC_*` variables because they are baked
+into the frontend build.
+
+### Render Backend
+
+Render build command:
+
+```bash
+pip install -r requirements.txt
+```
+
+Render start command:
+
+```bash
+uvicorn iut_server.app.main:app --host 0.0.0.0 --port $PORT
+```
+
+Render environment variables:
+
+```env
+HOST=0.0.0.0
+PORT=8000
+DEBUG=false
+
+OFFICE_START=09:00
+OFFICE_END=17:00
+DURATION_THRESHOLD_SECONDS=7200
+DEVICE_DURATION_THRESHOLD_SECONDS=3600
+ALERT_SWEEP_INTERVAL_SECONDS=30
+
+SQLITE_PATH=data/office_energy.db
+CORS_ALLOW_ORIGINS=https://iut-energy-monitor.vercel.app,https://iut-techathon-preli.vercel.app
+
+ENABLE_SIMULATOR=true
+SIMULATOR_API_URL=https://iut-techathon-preli.onrender.com
+SIMULATOR_TOGGLE_PROB=0.6
+SIMULATOR_HEARTBEAT_EVERY_N=10
+
+ENABLE_DISCORD_BOT=false
+API_BASE_URL=https://iut-techathon-preli.onrender.com
+COMMAND_PREFIX=!
+LLM_ENABLED=false
+GROQ_MODEL=llama-3.3-70b-versatile
+```
+
+Do not set blank optional variables such as `SIMULATOR_SEED=` on Render. Omit
+them unless you need them.
+
+For persistent SQLite on a paid Render service, mount a disk at:
+
+```text
+/var/data
+```
+
+Then set:
+
+```env
+SQLITE_PATH=/var/data/office_energy.db
+```
+
+---
+
+## Local Development
+
+### Backend
 
 ```powershell
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+copy iut_server\.env.example iut_server\.env
 uvicorn iut_server.app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-### API Endpoints
+Backend docs:
 
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/api/ingest` | Ingest device state (heartbeat or state_change) |
-| `GET` | `/api/status` | Full office status and wattage |
-| `GET` | `/api/room/{room_name}` | Single room (`Drawing Room` or `drawing_room`) |
-| `GET` | `/api/usage` | Daily / weekly / monthly kWh |
-| `GET` | `/api/health` | Server health check |
-| `WS` | `/ws/alerts` | Real-time alert stream |
-| `WS` | `/ws/live` | Hot-state diffs for the Next.js frontend |
-
-Interactive docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-
-### Backend Environment Variables
-
-Edit `iut_server/.env` (copy from `iut_server/.env.example`):
-
-| Variable | Default | Description |
-|---|---|---|
-| `HOST` | `127.0.0.1` | Bind host |
-| `PORT` | `8000` | Bind port |
-| `DEBUG` | `false` | Enable debug logging |
-| `OFFICE_START` | `09:00` | Office hours start (24h, HH:MM) |
-| `OFFICE_END` | `17:00` | Office hours end |
-| `DURATION_THRESHOLD_SECONDS` | `7200` | Room all-ON alert threshold (use `20` for demos) |
-| `DEVICE_DURATION_THRESHOLD_SECONDS` | `3600` | Per-device ON alert threshold (use `0` to fire on every ingest) |
-| `ALERT_SWEEP_INTERVAL_SECONDS` | `30` | Background alert sweep interval |
-| `SQLITE_PATH` | `data/office_energy.db` | SQLite database file |
-
-SQLite data is created automatically on first startup.
-
----
-
-## Feeding Data to the Backend
-
-Until `simulator.py` lands (Phase 3), use manual API calls or the example JSON files.
-
-### Option A — JSON file (recommended on Windows)
-
-```powershell
-# Turn on a fan
-curl.exe -X POST "http://127.0.0.1:8000/api/ingest" `
-  -H "Content-Type: application/json" `
-  --data-binary "@examples/ingest_state_change.json"
-
-# Sync a full room (Drawing Room heartbeat)
-curl.exe -X POST "http://127.0.0.1:8000/api/ingest" `
-  -H "Content-Type: application/json" `
-  --data-binary "@examples/ingest_heartbeat.json"
+```text
+http://127.0.0.1:8000/docs
 ```
 
-### Option B — PowerShell native
+### Frontend
 
 ```powershell
-$body = @{
-  message_type     = "state_change"
-  source_id        = "esp32-work-room-1"
-  sequence         = 1
-  device_timestamp = "2026-07-04T14:00:30Z"
-  changes          = @(
-    @{
-      device_id    = "work_room_1_fan_1"
-      room         = "work_room_1"
-      device_type  = "fan"
-      status       = "on"
-      power_draw_w = 60
-    }
-  )
-} | ConvertTo-Json -Depth 5
-
-Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/ingest" -Method POST `
-  -ContentType "application/json" -Body $body
+cd frontend
+npm install
+npm run dev
 ```
 
-### Option C — Phase 3 simulator
+Frontend dev URL:
+
+```text
+http://localhost:3000
+```
+
+### Simulator
+
+Run against local backend:
 
 ```powershell
 python -m simulator.simulator
 ```
 
-The simulator drives 15 devices (2 fans + 3 lights × 3 rooms), staggered at
-3s / 5s / 7s intervals. Tunable via env vars (`SIMULATOR_TOGGLE_PROB`,
-`SIMULATOR_HEARTBEAT_EVERY_N`, `SIMULATOR_SEED`) and CLI flags (`--url`,
-`--probability`, `--room`, `--seed`).
+Run against Render backend:
 
-See [doc/SIMULATOR.md](doc/SIMULATOR.md) for the implementation guide.
+```powershell
+python -m simulator.simulator --url https://iut-techathon-preli.onrender.com --probability 0.6
+```
 
-> **PowerShell tip:** `curl` is an alias for `Invoke-WebRequest`. Use `curl.exe` for real curl, or `Invoke-RestMethod` for native HTTP. Avoid escaped `\"` inside double-quoted strings — use single quotes or a JSON file instead.
+The simulator controls 15 devices total:
+
+| Room | Devices |
+|---|---|
+| Drawing Room | 2 fans, 3 lights |
+| Work Room 1 | 2 fans, 3 lights |
+| Work Room 2 | 2 fans, 3 lights |
 
 ---
 
-## Discord Bot Setup
+## API Reference
 
-### 1. Create a Discord bot
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/health` | Backend health check |
+| `GET` | `/api/status` | Full live office status |
+| `GET` | `/api/room/{room_name}` | Single room status |
+| `GET` | `/api/usage` | Daily, weekly, monthly usage |
+| `GET` | `/api/history?range=24h` | Time-series analytics |
+| `POST` | `/api/ingest` | Ingest heartbeat or state change payload |
+| `WS` | `/ws/live` | Live frontend state diffs |
+| `WS` | `/ws/alerts` | Live alert stream |
 
-1. Open the [Discord Developer Portal](https://discord.com/developers/applications).
-2. Create a new application → **Bot** → copy the token.
-3. Enable **Message Content Intent** under Privileged Gateway Intents.
-4. Invite the bot to your server (OAuth2 → URL Generator → `bot` scope → Send Messages permission).
+Example ingest:
 
-### 2. Get the alert channel ID
-
-1. Enable **Developer Mode** in Discord (Settings → Advanced).
-2. Right-click the target channel → **Copy Channel ID**.
-
-### 3. Configure `bot/.env`
-
-```env
-DISCORD_TOKEN=your-discord-bot-token
-API_BASE_URL=http://127.0.0.1:8000
-ALERT_CHANNEL_ID=your-discord-channel-id
-COMMAND_PREFIX=!
-GROQ_API_KEY=your-groq-api-key
-GROQ_MODEL=llama-3.3-70b-versatile
-LLM_ENABLED=true
+```powershell
+curl.exe -X POST "http://127.0.0.1:8000/api/ingest" `
+  -H "Content-Type: application/json" `
+  --data-binary "@examples/ingest_state_change.json"
 ```
 
-Set `LLM_ENABLED=false` or leave `GROQ_API_KEY` empty to skip LLM rewriting.
+---
 
-Full walkthrough: [DISCORD_BOT_SETUP.md](DISCORD_BOT_SETUP.md)
+## Discord Bot
 
-### 4. Start the bot
-
-Backend must be running first.
+The bot can run separately with:
 
 ```powershell
 python -m bot.bot
 ```
 
-### Discord Commands
+It can also run inside the backend process when these Render env vars are set:
+
+```env
+ENABLE_DISCORD_BOT=true
+DISCORD_TOKEN=your-discord-bot-token
+ALERT_CHANNEL_ID=your-alert-channel-id
+API_BASE_URL=https://iut-techathon-preli.onrender.com
+COMMAND_PREFIX=!
+LLM_ENABLED=false
+```
+
+Commands:
 
 | Command | Description |
 |---|---|
 | `!status` | Full office power summary |
 | `!room Drawing Room` | Single room status |
-| `!usage` | Energy usage (kWh) |
-| `!ask Why is power high?` | Free-form question via LLM |
-
-The bot also listens on `/ws/alerts` and posts real alerts to the configured channel.
-
----
-
-## Running Everything Together
-
-Open separate terminals (or use `scripts/demo.ps1` for backend + simulator):
-
-| Terminal | Command | URL / Output |
-|---|---|---|
-| 1 — Backend | `uvicorn iut_server.app.main:app --host 127.0.0.1 --port 8000 --reload` | <http://127.0.0.1:8000> |
-| 2 — Simulator | `python -m simulator.simulator` | POSTs to `/api/ingest` |
-| 3 — Frontend | `cd frontend && npm run dev` | <http://localhost:3000> |
-| 4 — Discord bot (optional) | `python -m bot.bot` | Listens on `/ws/alerts` |
+| `!usage` | Energy usage summary |
+| `!ask ...` | Optional LLM-powered question |
 
 ---
 
 ## Testing
 
-### Automated tests
+Run all backend tests:
 
 ```powershell
-pytest                  # all tests
-pytest tests/test_phase2.py -v   # Phase 2 integration only
+python -m pytest
 ```
 
-### Manual smoke test
+Build the frontend:
 
-| Step | Command | Expected |
-|---|---|---|
-| 1 | `Invoke-RestMethod .../api/health` | `{ status: "ok" }` |
-| 2 | POST `examples/ingest_state_change.json` | `{ accepted: 1, updated: [...] }` |
-| 3 | `Invoke-RestMethod .../api/status` | `total_wattage: 60` |
-| 4 | `!status` in Discord | Matches API data |
-| 5 | `pytest` | All tests pass |
-
-### Demo alert mode
-
-Set in `iut_server/.env`, then restart the backend:
-
-```env
-DURATION_THRESHOLD_SECONDS=20
+```powershell
+cd frontend
+npm run build
 ```
-
-Turn all 5 devices in one room ON via ingest and wait up to 30 seconds for a room duration alert.
-
-Detailed test procedures: [doc/SYSTEM_GUIDE.md](doc/SYSTEM_GUIDE.md)
 
 ---
 
-## Devices
+## Deployment Notes
 
-15 devices total — 2 fans + 3 lights per room.
+- The frontend is deployed from `frontend/` to Vercel.
+- The backend is deployed to Render as a Python web service.
+- `runtime.txt` pins Python for Render.
+- `ENABLE_SIMULATOR=true` starts the demo generator inside the backend server.
+- `CORS_ALLOW_ORIGINS` must include the Vercel frontend domain.
+- `NEXT_PUBLIC_WS_BASE_URL` must use `wss://` in production.
+- SQLite data is ephemeral on free Render unless you add a persistent disk.
 
-| Room | Slug | Example device ID |
-|---|---|---|
-| Drawing Room | `drawing_room` | `drawing_room_fan_1` |
-| Work Room 1 | `work_room_1` | `work_room_1_light_2` |
-| Work Room 2 | `work_room_2` | `work_room_2_fan_2` |
-
-Rated wattages used in examples: **fan 60W**, **light 15W**.
-
----
-
-## Troubleshooting
-
-| Problem | Solution |
-|---|---|
-| `curl` JSON decode error on ingest | Use `curl.exe` with a JSON file or single-quoted `-d '...'` — see [Feeding Data](#feeding-data-to-the-backend) |
-| `Invoke-WebRequest` security prompt | Use `Invoke-RestMethod` or `curl.exe` instead of `curl` |
-| `/api/status` shows 0W after ingest | Confirm ingest returned `200` and check the `updated` list in the response |
-| Discord bot cannot connect | Verify backend is running and `API_BASE_URL` in `bot/.env` is correct |
-| No alerts in Discord | Check `ALERT_CHANNEL_ID`, confirm device is ON outside office hours or duration threshold met |
-| `pytest` import errors | Run from repo root with venv activated; `pythonpath` is set in `pyproject.toml` |
-| SQLite permission errors | Ensure `data/` directory is writable or change `SQLITE_PATH` in `iut_server/.env` |
+More details are in [doc/DEPLOYMENT.md](doc/DEPLOYMENT.md).
 
 ---
 
@@ -350,21 +314,17 @@ Rated wattages used in examples: **fan 60W**, **light 15W**.
 
 | Document | Description |
 |---|---|
-| [doc/HIGH_LEVEL_DIAGRAMS.md](doc/HIGH_LEVEL_DIAGRAMS.md) | Phase 3 system diagrams — Version 1 (memory + SQLite) and Version 2 (Redis + PostgreSQL) |
-| [doc/ARCHITECTURE.md](doc/ARCHITECTURE.md) | System design, components, alert rules, trade-offs |
-| [doc/SYSTEM_GUIDE.md](doc/SYSTEM_GUIDE.md) | End-to-end flows, diagrams, full test guide |
-| [doc/SIMULATOR.md](doc/SIMULATOR.md) | Phase 3 `simulator.py` implementation guide |
-| [doc/HARDWARE.md](doc/HARDWARE.md) | ESP32 + relay reference schematic (informational) |
-| [doc/DEMO.md](doc/DEMO.md) | Live demo walk-through and one-click launcher |
-| [DISCORD_BOT_SETUP.md](DISCORD_BOT_SETUP.md) | Step-by-step Discord bot configuration |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Short architecture overview with link to full doc |
+| [doc/DEPLOYMENT.md](doc/DEPLOYMENT.md) | Render, Vercel, Docker, and environment setup |
+| [doc/ARCHITECTURE.md](doc/ARCHITECTURE.md) | System architecture and design decisions |
+| [doc/SYSTEM_GUIDE.md](doc/SYSTEM_GUIDE.md) | End-to-end technical guide |
+| [doc/SIMULATOR.md](doc/SIMULATOR.md) | Simulator behavior and implementation |
+| [doc/HARDWARE.md](doc/HARDWARE.md) | ESP32 hardware reference |
+| [DISCORD_BOT_SETUP.md](DISCORD_BOT_SETUP.md) | Discord bot setup |
 
 ---
 
-## Tech Stack
+## Status
 
-- **Backend:** FastAPI, Pydantic v2, SQLite (stdlib), asyncio
-- **Bot:** discord.py, httpx, Groq API (optional)
-- **Tests:** pytest, pytest-asyncio
-
-No Redis or PostgreSQL required for local development.
+The live frontend is connected to the Render backend. The backend can also run
+the embedded simulator so the frontend receives ongoing fan/light updates without
+a separate worker service.
