@@ -1,10 +1,8 @@
 # Office Energy Monitoring System
 
-Monitor office energy usage across three rooms (Drawing Room, Work Room 1, Work Room 2) with a FastAPI backend, SQLite logging, real-time alerts, and a Discord bot interface.
+Monitor office energy usage across three rooms (Drawing Room, Work Room 1, Work Room 2) with a FastAPI backend, SQLite logging, real-time alerts, a Discord bot interface, a synthetic device simulator, and a live web dashboard.
 
-**What's working today:** ingestion API, hot/cold state, alert engine, REST + WebSocket endpoints, Discord bot with optional Groq LLM replies.
-
-**Coming in Phase 3:** `simulator.py` device emulator, web dashboard frontend.
+**What's working today:** ingestion API, hot/cold state, dual-path alert engine (off-hours, room-duration, per-device-duration), REST + WebSocket endpoints, Discord bot with optional Groq LLM replies, `simulator.py` data source, and a vanilla-JS web dashboard.
 
 ---
 
@@ -44,40 +42,47 @@ pip install -r requirements.txt
 
 ```powershell
 copy backend\.env.example backend\.env
-copy bot\.env.example bot\.env
+copy bot\.env.example bot\.env      # optional — only needed for Discord bot
 ```
 
 The backend runs with defaults out of the box. The bot requires a Discord token (see [Discord bot setup](#discord-bot-setup) below).
 
-### 3. Start the backend
+### 3. Start the full stack
 
-```powershell
-uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
+The fastest path is the demo launcher, which starts the backend, simulator,
+and dashboard in one command.
+
+**Windows — pure batch (no PowerShell):**
+
+```cmd
+scripts\demo.cmd            REM start backend + simulator + dashboard
+scripts\demo.cmd stop       REM stop everything
 ```
 
-Verify:
+**Windows — PowerShell** (either `pwsh` for v7+ or `powershell` for v5.1):
 
 ```powershell
-Invoke-RestMethod http://127.0.0.1:8000/api/health
+powershell -File scripts\demo.ps1              # start everything
+powershell -File scripts\demo.ps1 -WithBot     # also start Discord bot
+powershell -File scripts\demo.ps1 -Stop        # stop everything
 ```
 
-### 4. Send test data (simulate a device toggle)
+**Linux / macOS:**
 
-```powershell
-curl.exe -X POST "http://127.0.0.1:8000/api/ingest" `
-  -H "Content-Type: application/json" `
-  --data-binary "@examples/ingest_state_change.json"
+```bash
+./scripts/demo.sh              # start everything
+./scripts/demo.sh --with-bot   # also start Discord bot
+./scripts/demo.sh --stop       # stop everything
 ```
 
-Check status:
+Once it's up:
 
-```powershell
-Invoke-RestMethod http://127.0.0.1:8000/api/status
-```
+- **Dashboard** → <http://127.0.0.1:5500>
+- **Backend API docs** → <http://127.0.0.1:8000/docs>
 
-You should see **Work Room 1 Fan 1** ON at **60W**.
+Or run the components manually in separate terminals — see [Running Everything Together](#running-everything-together) below.
 
-### 5. Run tests
+### 4. Run tests
 
 ```powershell
 pytest
@@ -92,12 +97,18 @@ IUT_Techathon_Preli/
 ├── backend/app/          # FastAPI server (ingestion, state, alerts, SQLite)
 ├── bot/                  # Discord bot
 ├── shared/models/        # Pydantic API contracts
+├── simulator/            # 15-device synthetic data source (Phase 3)
+├── dashboard/            # Vanilla HTML/CSS/JS live frontend (Phase 3)
+├── scripts/              # One-command demo launchers
 ├── examples/             # Sample ingest JSON files
 ├── tests/                # pytest suite
 └── doc/                  # Architecture and guides
     ├── ARCHITECTURE.md   # System design
     ├── SYSTEM_GUIDE.md   # How it works + detailed testing
-    └── SIMULATOR.md      # Phase 3 simulator guide
+    ├── SIMULATOR.md      # Simulator internals
+    ├── HIGH_LEVEL_DIAGRAMS.md  # Phase 3 system diagrams
+    ├── HARDWARE.md       # Reference ESP32 schematic
+    └── DEMO.md           # Live demo walk-through
 ```
 
 ---
@@ -136,6 +147,7 @@ Edit `backend/.env` (copy from `backend/.env.example`):
 | `OFFICE_START` | `09:00` | Office hours start (24h, HH:MM) |
 | `OFFICE_END` | `17:00` | Office hours end |
 | `DURATION_THRESHOLD_SECONDS` | `7200` | Room all-ON alert threshold (use `20` for demos) |
+| `DEVICE_DURATION_THRESHOLD_SECONDS` | `3600` | Per-device ON alert threshold (use `0` to fire on every ingest) |
 | `ALERT_SWEEP_INTERVAL_SECONDS` | `30` | Background alert sweep interval |
 | `SQLITE_PATH` | `data/office_energy.db` | SQLite database file |
 
@@ -189,6 +201,11 @@ Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/ingest" -Method POST `
 ```powershell
 python -m simulator.simulator
 ```
+
+The simulator drives 15 devices (2 fans + 3 lights × 3 rooms), staggered at
+3s / 5s / 7s intervals. Tunable via env vars (`SIMULATOR_TOGGLE_PROB`,
+`SIMULATOR_HEARTBEAT_EVERY_N`, `SIMULATOR_SEED`) and CLI flags (`--url`,
+`--probability`, `--room`, `--seed`).
 
 See [doc/SIMULATOR.md](doc/SIMULATOR.md) for the implementation guide.
 
@@ -249,19 +266,14 @@ The bot also listens on `/ws/alerts` and posts real alerts to the configured cha
 
 ## Running Everything Together
 
-Open **two terminals** (three when the simulator exists):
+Open **four terminals** (or use `scripts/demo.ps1`):
 
-| Terminal | Command |
-|---|---|
-| 1 — Backend | `uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload` |
-| 2 — Discord bot | `python -m bot.bot` |
-| 3 — Simulator (Phase 3) | `python -m simulator.simulator` |
-
-```text
-Terminal 1 (Backend)  : http://127.0.0.1:8000
-Terminal 2 (Bot)      : Discord Gateway
-Terminal 3 (Simulator): POST -> /api/ingest  [Phase 3]
-```
+| Terminal | Command | URL / Output |
+|---|---|---|
+| 1 — Backend | `uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload` | <http://127.0.0.1:8000> |
+| 2 — Simulator | `python -m simulator.simulator` | POSTs to `/api/ingest` |
+| 3 — Dashboard | `python -m http.server 5500 --directory dashboard` | <http://127.0.0.1:5500> |
+| 4 — Discord bot (optional) | `python -m bot.bot` | Listens on `/ws/alerts` |
 
 ---
 
@@ -334,6 +346,8 @@ Rated wattages used in examples: **fan 60W**, **light 15W**.
 | [doc/ARCHITECTURE.md](doc/ARCHITECTURE.md) | System design, components, alert rules, trade-offs |
 | [doc/SYSTEM_GUIDE.md](doc/SYSTEM_GUIDE.md) | End-to-end flows, diagrams, full test guide |
 | [doc/SIMULATOR.md](doc/SIMULATOR.md) | Phase 3 `simulator.py` implementation guide |
+| [doc/HARDWARE.md](doc/HARDWARE.md) | ESP32 + relay reference schematic (informational) |
+| [doc/DEMO.md](doc/DEMO.md) | Live demo walk-through and one-click launcher |
 | [DISCORD_BOT_SETUP.md](DISCORD_BOT_SETUP.md) | Step-by-step Discord bot configuration |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Short architecture overview with link to full doc |
 

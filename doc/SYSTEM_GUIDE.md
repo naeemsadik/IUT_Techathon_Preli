@@ -9,8 +9,8 @@ This document describes how the full system works after **Phase 2**, and how to 
 | FastAPI backend (hot state, SQLite, ingestion, alerts) | Implemented (Phase 2) |
 | Discord bot (REST commands + alert WebSocket listener) | Implemented (Phase 1) |
 | Shared Pydantic API contracts | Implemented (Phase 1) |
-| `simulator.py` (device emulator) | Planned (Phase 3) |
-| Web dashboard frontend | Planned (Phase 3) |
+| `simulator.py` (device emulator) | Implemented (Phase 3) |
+| Web dashboard frontend | Implemented (Phase 3) |
 | Redis / PostgreSQL | Deferred (Phase 3+) |
 
 ---
@@ -185,6 +185,7 @@ Two independent evaluation paths feed the same alert creation logic:
 |---|---|---|
 | **Off-hours** | Device is `on` outside `OFFICE_START`–`OFFICE_END` | `device_id` |
 | **Room duration** | All devices in a room are `on` continuously for longer than `DURATION_THRESHOLD` | room slug |
+| **Device duration** | A single device is `on` continuously for longer than `DEVICE_DURATION_THRESHOLD_SECONDS` | `device_id` |
 
 ### De-duplication
 
@@ -196,6 +197,7 @@ Shrink thresholds in `backend/.env` for quick demos:
 
 ```env
 DURATION_THRESHOLD_SECONDS=20
+DEVICE_DURATION_THRESHOLD_SECONDS=0
 OFFICE_START=09:00
 OFFICE_END=17:00
 ```
@@ -302,7 +304,30 @@ python -m bot.bot
 
 ### Start the simulator (Phase 3)
 
-Not yet implemented. See [SIMULATOR.md](./SIMULATOR.md) for the implementation guide.
+```powershell
+python -m simulator.simulator
+```
+
+Drives all 15 devices with staggered 3s/5s/7s intervals per room.
+
+### Start the dashboard (Phase 3)
+
+In another terminal:
+
+```powershell
+python -m http.server 5500 --directory dashboard
+```
+
+Open <http://127.0.0.1:5500>.
+
+### Run everything in one command (Phase 3)
+
+```powershell
+pwsh -File scripts/demo.ps1            # backend + simulator + dashboard
+pwsh -File scripts/demo.ps1 -WithBot   # adds Discord bot
+```
+
+See [`DEMO.md`](./DEMO.md) for the full walk-through.
 
 ---
 
@@ -478,6 +503,7 @@ Full bot setup: [DISCORD_BOT_SETUP.md](../DISCORD_BOT_SETUP.md)
 | `OFFICE_START` | `09:00` | Office hours start (HH:MM) |
 | `OFFICE_END` | `17:00` | Office hours end (HH:MM) |
 | `DURATION_THRESHOLD_SECONDS` | `7200` | Room all-ON alert threshold |
+| `DEVICE_DURATION_THRESHOLD_SECONDS` | `3600` | Per-device ON alert threshold (`0` fires immediately on every ingest) |
 | `ALERT_SWEEP_INTERVAL_SECONDS` | `30` | Periodic alert sweep interval |
 | `SQLITE_PATH` | `data/office_energy.db` | SQLite database file |
 
@@ -498,5 +524,8 @@ Full bot setup: [DISCORD_BOT_SETUP.md](../DISCORD_BOT_SETUP.md)
 ## 11. Related Documents
 
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — Original system design and engineering trade-offs
-- [SIMULATOR.md](./SIMULATOR.md) — How to build `simulator.py` (Phase 3)
+- [SIMULATOR.md](./SIMULATOR.md) — `simulator.py` implementation guide (Phase 3)
+- [HARDWARE.md](./HARDWARE.md) — Reference ESP32 + relay schematic
+- [DEMO.md](./DEMO.md) — Live demo walk-through
+- [HIGH_LEVEL_DIAGRAMS.md](./HIGH_LEVEL_DIAGRAMS.md) — Phase 3 system diagrams
 - [DISCORD_BOT_SETUP.md](../DISCORD_BOT_SETUP.md) — Discord bot configuration

@@ -32,6 +32,7 @@ class BackendSettings:
     office_start: time
     office_end: time
     duration_threshold: timedelta
+    device_duration_threshold: timedelta
     sqlite_path: str
     alert_sweep_interval_seconds: int
 
@@ -40,6 +41,17 @@ class BackendSettings:
 def get_settings() -> BackendSettings:
     """Return cached backend settings."""
 
+    def _parse_duration(value: str, default: int) -> timedelta:
+        """Parse a non-negative integer seconds value, falling back to default."""
+
+        try:
+            seconds = int(value)
+        except (TypeError, ValueError):
+            return timedelta(seconds=default)
+        if seconds < 0:
+            return timedelta(seconds=default)
+        return timedelta(seconds=seconds)
+
     return BackendSettings(
         host=os.getenv("HOST", "127.0.0.1"),
         port=int(os.getenv("PORT", "8000")),
@@ -47,8 +59,11 @@ def get_settings() -> BackendSettings:
         version="0.1.0",
         office_start=_parse_time(os.getenv("OFFICE_START", "09:00")),
         office_end=_parse_time(os.getenv("OFFICE_END", "17:00")),
-        duration_threshold=timedelta(
-            seconds=int(os.getenv("DURATION_THRESHOLD_SECONDS", "7200"))
+        duration_threshold=_parse_duration(
+            os.getenv("DURATION_THRESHOLD_SECONDS"), 7200
+        ),
+        device_duration_threshold=_parse_duration(
+            os.getenv("DEVICE_DURATION_THRESHOLD_SECONDS"), 3600
         ),
         sqlite_path=os.getenv("SQLITE_PATH", "data/office_energy.db"),
         alert_sweep_interval_seconds=int(

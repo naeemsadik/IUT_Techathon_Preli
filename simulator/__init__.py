@@ -1,0 +1,1 @@
+"""Standalone simulator that emulates 15 office devices and POSTs to the backend."""

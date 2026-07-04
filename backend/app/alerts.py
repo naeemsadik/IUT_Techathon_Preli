@@ -22,6 +22,22 @@ logger = logging.getLogger(__name__)
 
 ALERT_TYPE_OFF_HOURS = "off_hours"
 ALERT_TYPE_ROOM_DURATION = "room_duration"
+ALERT_TYPE_DEVICE_DURATION = "device_duration"
+
+
+def _humanise_duration(duration: timedelta) -> str:
+    """Format a duration threshold into a short human-readable label."""
+
+    total = int(duration.total_seconds())
+    if total <= 0:
+        return "0 seconds"
+    hours, remainder = divmod(total, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    if hours >= 1:
+        return f"{hours} hour{'s' if hours != 1 else ''}"
+    if minutes >= 1:
+        return f"{minutes} minute{'s' if minutes != 1 else ''}"
+    return f"{seconds} second{'s' if seconds != 1 else ''}"
 
 
 class AlertEngine:
@@ -59,6 +75,7 @@ class AlertEngine:
             self._resolve_cleared_conditions(record, server_time)
             if record.status == "on":
                 await self._maybe_fire_off_hours_alert(record, server_time)
+                await self._maybe_fire_device_duration_alert(record, server_time)
             affected_rooms.add(record.room)
 
         for room_slug in affected_rooms:
@@ -71,6 +88,7 @@ class AlertEngine:
             self._resolve_cleared_conditions(device, server_time)
             if device.status == "on":
                 await self._maybe_fire_off_hours_alert(device, server_time)
+                await self._maybe_fire_device_duration_alert(device, server_time)
 
         for room_slug in ROOM_SLUGS:
             await self._maybe_fire_room_duration_alert(room_slug, server_time)
@@ -99,6 +117,11 @@ class AlertEngine:
         if record.status == "off":
             self._database.resolve_alerts(
                 ALERT_TYPE_OFF_HOURS,
+                record.device_id,
+                server_time,
+            )
+            self._database.resolve_alerts(
+                ALERT_TYPE_DEVICE_DURATION,
                 record.device_id,
                 server_time,
             )
@@ -146,6 +169,40 @@ class AlertEngine:
             server_time=server_time,
         )
 
+    async def _maybe_fire_device_duration_alert(
+        self,
+        record: DeviceRecord,
+        server_time: datetime,
+    ) -> None:
+        """Fire a per-device duration alert when a single device has been ON too long.
+
+        A threshold of 0 mirrors the room-duration rule: any ON device has
+        already crossed the boundary (last_changed is never after server_time).
+        """
+
+        threshold = self._settings.device_duration_threshold
+        if threshold.total_seconds() < 0:
+            return
+        if server_time - record.last_changed < threshold:
+            return
+        if self._database.has_unresolved_alert(
+            ALERT_TYPE_DEVICE_DURATION, record.device_id
+        ):
+            return
+
+        room_name = ROOM_SLUGS[record.room]
+        device_name = device_display_name(record)
+        duration_label = _humanise_duration(threshold)
+        message = (
+            f"{room_name} {device_name} has been ON for over {duration_label}."
+        )
+        await self._create_and_broadcast(
+            alert_type=ALERT_TYPE_DEVICE_DURATION,
+            target=record.device_id,
+            message=message,
+            server_time=server_time,
+        )
+
     async def _maybe_fire_room_duration_alert(
         self,
         room_slug: str,
@@ -164,12 +221,7 @@ class AlertEngine:
             return
 
         room_name = ROOM_SLUGS[room_slug]
-        hours = int(self._settings.duration_threshold.total_seconds() // 3600)
-        if hours >= 1:
-            duration_label = f"{hours} hour{'s' if hours != 1 else ''}"
-        else:
-            seconds = int(self._settings.duration_threshold.total_seconds())
-            duration_label = f"{seconds} seconds"
+        duration_label = _humanise_duration(self._settings.duration_threshold)
         message = (
             f"All devices in {room_name} have been ON for over {duration_label}."
         )

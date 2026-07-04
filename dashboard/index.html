@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Office Energy Monitoring — Live Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">⚡</span>
+      <div>
+        <h1>Office Energy Monitor</h1>
+        <p class="subtitle">Live state across 3 rooms · 15 devices</p>
+      </div>
+    </div>
+    <div class="status-block">
+      <div class="status-row">
+        <span class="dot" id="wsDot"></span>
+        <span id="wsLabel">Connecting…</span>
+      </div>
+      <div class="status-row small">
+        <span id="lastUpdate">—</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Power meter -->
+    <section class="power-card">
+      <div class="power-left">
+        <div class="power-label">TOTAL OFFICE LOAD</div>
+        <div class="power-value">
+          <span id="totalWattage">0</span><span class="unit">W</span>
+        </div>
+        <div class="power-meta">
+          <span id="deviceCount">0 of 15 devices ON</span>
+        </div>
+      </div>
+      <div class="power-right">
+        <div class="meter">
+          <div class="meter-bar" id="meterBar"></div>
+        </div>
+        <div class="meter-meta">
+          <span>0 W</span>
+          <span class="meter-max">Max 300 W (5 fans @ 60W)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Rooms -->
+    <section class="rooms" id="roomsContainer">
+      <!-- Room cards injected by JS -->
+    </section>
+
+    <!-- Bottom row: alerts + usage -->
+    <section class="bottom-row">
+      <div class="card alerts-card">
+        <div class="card-head">
+          <h2>Live Alerts</h2>
+          <button class="btn-clear" id="clearAlerts">Clear</button>
+        </div>
+        <ul class="alerts-list" id="alertsList">
+          <li class="alerts-empty">No alerts yet. Off-hours and room-duration breaches will appear here.</li>
+        </ul>
+      </div>
+
+      <div class="card usage-card">
+        <div class="card-head">
+          <h2>Energy Usage (kWh)</h2>
+          <button class="btn-refresh" id="refreshUsage">Refresh</button>
+        </div>
+        <div class="usage-grid">
+          <div class="usage-cell">
+            <div class="usage-label">Today</div>
+            <div class="usage-value" id="usageDaily">0.000</div>
+          </div>
+          <div class="usage-cell">
+            <div class="usage-label">Last 7 days</div>
+            <div class="usage-value" id="usageWeekly">0.000</div>
+          </div>
+          <div class="usage-cell">
+            <div class="usage-label">This month</div>
+            <div class="usage-value" id="usageMonthly">0.000</div>
+          </div>
+        </div>
+        <div class="usage-rooms" id="usageRooms"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>Backend: <code id="apiUrl">—</code></span>
+    <span>Updates via WebSocket — no refresh needed.</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

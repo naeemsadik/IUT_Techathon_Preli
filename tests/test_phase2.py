@@ -283,3 +283,80 @@ def test_room_lookup_accepts_slug(phase2_client: TestClient) -> None:
 
 def test_manifest_has_fifteen_devices() -> None:
     assert len(DEVICE_MANIFEST) == 15
+
+
+def test_device_duration_alert_fires_when_device_on_too_long(
+    phase2_client: TestClient,
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A single device ON past DEVICE_DURATION_THRESHOLD_SECONDS fires a device_duration alert.
+
+    With DEVICE_DURATION_THRESHOLD_SECONDS=0, any device that is ON at evaluation
+    time (last_changed within microseconds of server_time) is treated as having
+    crossed the boundary, since ``server_time - last_changed`` is non-negative.
+    """
+
+    monkeypatch.setenv("SQLITE_PATH", str(tmp_path / "device_duration.db"))
+    monkeypatch.setenv("DEVICE_DURATION_THRESHOLD_SECONDS", "0")
+    monkeypatch.setenv("DURATION_THRESHOLD_SECONDS", "999999")
+    monkeypatch.setenv("ALERT_SWEEP_INTERVAL_SECONDS", "3600")
+    get_settings.cache_clear()
+    app = create_app()
+    with TestClient(app) as client, client.websocket_connect("/ws/alerts") as websocket:
+        client.post(
+            "/api/ingest",
+            json=_state_change_payload(
+                device_id="work_room_1_light_1",
+                room="work_room_1",
+                device_type="light",
+                status="on",
+                power_draw_w=15,
+            ),
+        )
+        alert = websocket.receive_json()
+
+    assert alert["severity"] == "warning"
+    assert "Work Room 1 Light 1" in alert["message"]
+    assert app.state.db.has_unresolved_alert(
+        "device_duration",
+        "work_room_1_light_1",
+    )
+    get_settings.cache_clear()
+
+
+def test_device_duration_alert_does_not_fire_within_threshold(
+    phase2_client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A positive threshold must gate the rule — only ON devices past the
+    threshold should fire."""
+
+    monkeypatch.setenv("DEVICE_DURATION_THRESHOLD_SECONDS", "3600")
+    get_settings.cache_clear()
+    try:
+        engine = phase2_client.app.state.alert_engine
+        # last_changed is "just now", so device is far below the 1-hour threshold.
+        now = datetime.now(UTC)
+        record = phase2_client.app.state.hot_store.get_device("drawing_room_fan_2")
+        phase2_client.app.state.hot_store.apply_updates(
+            [
+                type(record)(
+                    device_id=record.device_id,
+                    room=record.room,
+                    device_type=record.device_type,
+                    status="on",
+                    power_draw_w=60,
+                    last_changed=now,
+                )
+            ],
+            now,
+        )
+        asyncio.run(engine.evaluate_all(now))
+
+        assert not phase2_client.app.state.db.has_unresolved_alert(
+            "device_duration",
+            "drawing_room_fan_2",
+        )
+    finally:
+        get_settings.cache_clear()

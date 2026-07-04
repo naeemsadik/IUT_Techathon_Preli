@@ -30,8 +30,8 @@ Visualization favors low-latency delivery: WebSockets push updates to the dashbo
 | Dashboard WebSocket (`/ws/dashboard`) | Done (Phase 2, backend only) | `backend/app/websocket/dashboard.py` |
 | Discord bot (commands + alert listener) | Done (Phase 1) | `bot/` |
 | Groq LLM integration | Done (Phase 1) | `bot/services/llm_client.py` |
-| `simulator.py` | Planned (Phase 3) | `simulator/simulator.py` |
-| Web dashboard frontend | Planned (Phase 3) | `dashboard/` |
+| `simulator.py` | Implemented (Phase 3) | `simulator/simulator.py` |
+| Web dashboard frontend | Implemented (Phase 3) | `dashboard/` |
 | Redis / PostgreSQL | Deferred | — |
 
 ---
@@ -144,7 +144,7 @@ Redis was evaluated and deferred — 15 devices do not justify the operational o
 |---|---|---|---|
 | **Off-Hours Alert** | Device `on` outside `OFFICE_START`–`OFFICE_END` | `device_id` | Yes |
 | **Room Duration Alert** | All devices in room `on` continuously > `DURATION_THRESHOLD` | room slug | Yes |
-| **Device Duration Alert** | Single device `on` > threshold | `device_id` | No (optional enhancement) |
+| **Device Duration Alert** | Single device `on` > `DEVICE_DURATION_THRESHOLD_SECONDS` | `device_id` | Yes (Phase 3) |
 
 ### 6.2 Two Evaluation Paths
 
@@ -184,6 +184,7 @@ Redis was evaluated and deferred — 15 devices do not justify the operational o
 | `OFFICE_START` | `09:00` | Office hours start |
 | `OFFICE_END` | `17:00` | Office hours end |
 | `DURATION_THRESHOLD_SECONDS` | `7200` | Room all-ON alert threshold |
+| `DEVICE_DURATION_THRESHOLD_SECONDS` | `3600` | Per-device ON alert threshold (`0` fires immediately on every ingest) |
 | `ALERT_SWEEP_INTERVAL_SECONDS` | `30` | Periodic sweep interval |
 | `SQLITE_PATH` | `data/office_energy.db` | SQLite database path |
 
@@ -191,6 +192,7 @@ Redis was evaluated and deferred — 15 devices do not justify the operational o
 
 ```env
 DURATION_THRESHOLD_SECONDS=20
+DEVICE_DURATION_THRESHOLD_SECONDS=0
 ```
 
 Restart the backend after changing env vars.
@@ -261,5 +263,7 @@ Restart the backend after changing env vars.
 - [HIGH_LEVEL_DIAGRAMS.md](./HIGH_LEVEL_DIAGRAMS.md) — Phase 3 system diagrams (memory/SQLite vs Redis/PostgreSQL)
 - [README.md](../README.md) — Local setup and onboarding
 - [SYSTEM_GUIDE.md](./SYSTEM_GUIDE.md) — End-to-end flows, diagrams, and test procedures
-- [SIMULATOR.md](./SIMULATOR.md) — Building `simulator.py`
+- [SIMULATOR.md](./SIMULATOR.md) — `simulator.py` implementation guide
+- [HARDWARE.md](./HARDWARE.md) — ESP32 + relay reference schematic
+- [DEMO.md](./DEMO.md) — Live demo walk-through
 - [DISCORD_BOT_SETUP.md](../DISCORD_BOT_SETUP.md) — Discord Developer Portal setup
