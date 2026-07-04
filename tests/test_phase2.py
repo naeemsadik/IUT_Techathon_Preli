@@ -257,8 +257,8 @@ def test_usage_calculation_from_transitions(phase2_client: TestClient) -> None:
     assert drawing_room["kwh"] == pytest.approx(1.0, abs=0.05)
 
 
-def test_dashboard_websocket_receives_diff(phase2_client: TestClient) -> None:
-    with phase2_client.websocket_connect("/ws/dashboard") as websocket:
+def test_live_state_websocket_receives_diff(phase2_client: TestClient) -> None:
+    with phase2_client.websocket_connect("/ws/live") as websocket:
         payload = _state_change_payload(
             device_id="work_room_2_light_1",
             room="work_room_2",

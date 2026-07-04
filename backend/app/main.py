@@ -16,7 +16,7 @@ from backend.app.api.websocket import router as websocket_router
 from backend.app.config import get_settings
 from backend.app.persistence.database import Database
 from backend.app.state import HotStateStore
-from backend.app.websocket.dashboard import DashboardWebSocketManager
+from backend.app.websocket.live_state import LiveStateWebSocketManager
 from backend.app.websocket.manager import AlertWebSocketManager
 
 logger = logging.getLogger(__name__)
@@ -31,13 +31,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     database.init_db()
     hot_store = HotStateStore()
     alert_ws = AlertWebSocketManager()
-    dashboard_ws = DashboardWebSocketManager()
+    live_state_ws = LiveStateWebSocketManager()
     alert_engine = AlertEngine(hot_store, database, alert_ws, settings)
 
     app.state.db = database
     app.state.hot_store = hot_store
     app.state.alert_ws = alert_ws
-    app.state.dashboard_ws = dashboard_ws
+    app.state.live_state_ws = live_state_ws
     app.state.alert_engine = alert_engine
 
     sweep_task = asyncio.create_task(alert_engine.run_periodic_sweep())

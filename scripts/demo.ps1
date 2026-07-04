@@ -1,10 +1,10 @@
-# Demo launcher — starts backend, simulator, dashboard, and (optionally) the
+# Demo launcher - starts backend, simulator, and (optionally) the
 # Discord bot, all from one PowerShell command. Designed for techathon demos.
 #
 # Usage (from repo root):
 #
-#   powershell -File scripts\demo.ps1                # full stack, no bot
-#   powershell -File scripts\demo.ps1 -WithBot       # full stack + Discord bot
+#   powershell -File scripts\demo.ps1                # backend + simulator
+#   powershell -File scripts\demo.ps1 -WithBot       # backend + simulator + Discord bot
 #   powershell -File scripts\demo.ps1 -Stop          # stop everything started here
 #
 # (Or, if you have PowerShell 7+: `pwsh -File scripts\demo.ps1 [args]` works
@@ -82,17 +82,7 @@ function Start-Demo {
         -PassThru -WindowStyle Normal
     $pids += $p.Id
 
-    # 3. Dashboard (static server on :5500)
-    Write-Host "[start] Dashboard on http://127.0.0.1:5500"
-    $p = Start-Process -FilePath $python `
-        -ArgumentList @("-m", "http.server", "5500", "--directory", "dashboard") `
-        -WorkingDirectory $RepoRoot `
-        -RedirectStandardOutput (Join-Path $LogDir "dashboard.out.log") `
-        -RedirectStandardError  (Join-Path $LogDir "dashboard.err.log") `
-        -PassThru -WindowStyle Normal
-    $pids += $p.Id
-
-    # 4. Bot (optional)
+    # 3. Bot (optional)
     if ($WithBot) {
         if (-not (Test-Path (Join-Path $RepoRoot "bot/.env"))) {
             Write-Host "[setup] bot/.env missing — bot will fail to start. Copy bot\.env.example first." -ForegroundColor Yellow
@@ -113,8 +103,8 @@ function Start-Demo {
     Write-Host "============================================================"
     Write-Host "Demo stack is up."
     Write-Host "  Backend:   http://127.0.0.1:8000/docs"
-    Write-Host "  Dashboard: http://127.0.0.1:5500"
     Write-Host "  Simulator: running in background, logs in logs_demo/"
+    Write-Host "  Frontend:  run cd frontend; npm run dev"
     if ($WithBot) {
         Write-Host "  Bot:       running in background"
     }

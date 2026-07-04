@@ -6,4 +6,4 @@ Responsibilities:
 - Keep business logic out of route handlers.
 
 Future extension:
-- Add simulator ingestion and dashboard APIs as separate routers.
+- Add simulator ingestion and frontend-facing APIs as separate routers.

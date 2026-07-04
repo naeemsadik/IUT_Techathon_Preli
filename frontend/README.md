@@ -1,6 +1,6 @@
 # Office Energy Monitor — Frontend (Next.js)
 
-A modern, minimal dashboard for the office energy monitoring system.
+A modern, minimal frontend for the office energy monitoring system.
 
 | Tech | Why |
 |---|---|

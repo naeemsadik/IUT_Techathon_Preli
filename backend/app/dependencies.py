@@ -9,7 +9,7 @@ from backend.app.repositories.bot_repository import BotRepository
 from backend.app.repositories.real_repository import RealBotRepository
 from backend.app.services.bot_service import BotService
 from backend.app.state import HotStateStore
-from backend.app.websocket.dashboard import DashboardWebSocketManager
+from backend.app.websocket.live_state import LiveStateWebSocketManager
 from backend.app.websocket.manager import AlertWebSocketManager
 
 
@@ -31,10 +31,10 @@ def get_alert_ws(request: Request) -> AlertWebSocketManager:
     return request.app.state.alert_ws
 
 
-def get_dashboard_ws(request: Request) -> DashboardWebSocketManager:
-    """Return the dashboard WebSocket manager."""
+def get_live_state_ws(request: Request) -> LiveStateWebSocketManager:
+    """Return the live-state WebSocket manager."""
 
-    return request.app.state.dashboard_ws
+    return request.app.state.live_state_ws
 
 
 def get_alert_engine(request: Request) -> AlertEngine:

@@ -303,7 +303,7 @@ Leave all devices in one room ON (or wait for the simulator to do it) and confir
 |---|---|---|
 | 1 | Simulator starts without errors | HTTP 200 from ingest |
 | 2 | `GET /api/status` after 30s | Wattage values change |
-| 3 | Drawing Room updates every ~3s | Visible in status or dashboard WS |
+| 3 | Drawing Room updates every ~3s | Visible in status or live WS |
 | 4 | Work Room 1 updates every ~5s | Independent from Drawing Room |
 | 5 | Work Room 2 updates every ~7s | Independent from other rooms |
 | 6 | `state_change` on toggle | Only changed device in `updated` response |
@@ -324,7 +324,7 @@ Leave all devices in one room ON (or wait for the simulator to do it) and confir
 
 - **CLI flags:** `--url`, `--probability`, `--room drawing_room` (single-room mode for debugging)
 - **Logging:** Print each POST with sequence number and response `updated` list
-- **Dashboard WS client:** A small test script subscribing to `/ws/dashboard` to print diffs
+- **Live WS client:** A small test script subscribing to `/ws/live` to print diffs
 - **Deterministic test mode:** `--seed 42` for reproducible demos
 
 ---

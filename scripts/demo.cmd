@@ -2,11 +2,11 @@
 REM ==============================================================================
 REM  Office Energy Monitoring - Demo launcher (pure Windows batch, no PowerShell)
 REM
-REM  Starts backend, simulator, and dashboard each in their own console window.
+REM  Starts backend and simulator each in their own console window.
 REM
 REM  Usage (from repo root):
 REM
-REM      scripts\demo.cmd             REM full stack (backend + simulator + dashboard)
+REM      scripts\demo.cmd             REM backend + simulator
 REM      scripts\demo.cmd bot         REM also start the Discord bot
 REM      scripts\demo.cmd stop        REM kill everything started above
 REM
@@ -62,9 +62,6 @@ ping -n 3 127.0.0.1 >nul
 echo [start] Simulator (15 devices, staggered 3s/5s/7s)
 start "Office-Energy / Simulator" /B cmd /c "set PYTHONUNBUFFERED=1 && cd /d "%REPO_ROOT%" && "%PY%" -m simulator.simulator 1>"%LOG_DIR%\simulator.out.log" 2>"%LOG_DIR%\simulator.err.log""
 
-echo [start] Dashboard on http://127.0.0.1:5500
-start "Office-Energy / Dashboard" /B cmd /c "set PYTHONUNBUFFERED=1 && cd /d "%REPO_ROOT%" && "%PY%" -m http.server 5500 --directory dashboard 1>"%LOG_DIR%\dashboard.out.log" 2>"%LOG_DIR%\dashboard.err.log""
-
 REM ---- optionally launch the Discord bot in its own window ---------------
 if "%WITH_BOT%"=="1" (
     if not exist "%REPO_ROOT%\bot\.env" (
@@ -80,7 +77,7 @@ echo.
 echo ============================================================
 echo Demo stack is up.
 echo   Backend:   http://127.0.0.1:8000/docs
-echo   Dashboard: http://127.0.0.1:5500
+echo   Frontend:  cd frontend ^&^& npm run dev
 echo   Logs:      %LOG_DIR%\
 if "%WITH_BOT%"=="1" echo   Bot:       running in background
 echo.
@@ -92,12 +89,11 @@ exit /b 0
 
 :stop_action
 REM ---- tear-down: kill processes by title ---------------------------------
-echo [stop] Killing backend, simulator, dashboard, bot windows...
+echo [stop] Killing backend, simulator, bot windows...
 taskkill /FI "WINDOWTITLE eq Office-Energy / Backend*"   /T /F >nul 2>&1
 taskkill /FI "WINDOWTITLE eq Office-Energy / Simulator*" /T /F >nul 2>&1
-taskkill /FI "WINDOWTITLE eq Office-Energy / Dashboard*" /T /F >nul 2>&1
 taskkill /FI "WINDOWTITLE eq Office-Energy / Bot*"       /T /F >nul 2>&1
-REM Belt-and-suspenders: also kill any orphaned uvicorn / simulator / http.server
+REM Belt-and-suspenders: also kill any orphaned uvicorn / simulator
 taskkill /IM uvicorn.exe /T /F >nul 2>&1
 taskkill /IM python.exe /FI "WINDOWTITLE eq Office-Energy*" /T /F >nul 2>&1
 if exist "%MARKER%" del /F /Q "%MARKER%"

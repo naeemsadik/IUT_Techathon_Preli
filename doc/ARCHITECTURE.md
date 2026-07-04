@@ -1,7 +1,7 @@
 # Architecture Document: Office Energy Monitoring System
 
 **Version:** 2.1  
-**Status:** Phase 2 implemented — backend, ingestion, alerts, SQLite, and real WebSockets are live. Simulator and dashboard frontend are Phase 3.
+**Status:** Backend, ingestion, alerts, SQLite, real WebSockets, simulator, and Next.js frontend are live.
 
 **Changelog from v2.0:** Updated to reflect Phase 2 implementation (15 devices, in-memory hot state, SQLite cold state, `RealBotRepository`, dual-path alerting, ingestion gateway). Corrected device count. Added implementation status, actual repository layout, and links to onboarding docs.
 
@@ -11,7 +11,7 @@
 
 The system is a modular, event-driven architecture centered on a FastAPI backend that acts as the **single source of truth** for all device state. Two independent triggers feed the alerting engine — **state-change events** and a **periodic time sweep** — because some alert conditions (like "it's now past 5 PM") aren't caused by a device event at all; they're caused by the clock moving.
 
-Visualization favors low-latency delivery: WebSockets push updates to the dashboard, and the Discord bot pulls from the same REST layer the dashboard uses, so both interfaces reflect identical state.
+Visualization favors low-latency delivery: WebSockets push updates to the frontend, and the Discord bot pulls from the same REST layer the frontend uses, so both interfaces reflect identical state.
 
 ---
 
@@ -27,11 +27,11 @@ Visualization favors low-latency delivery: WebSockets push updates to the dashbo
 | RealBotRepository + kWh calculation | Done (Phase 2) | `backend/app/repositories/real_repository.py` |
 | Dual-path alert engine | Done (Phase 2) | `backend/app/alerts.py` |
 | Alert WebSocket (`/ws/alerts`) | Done (Phase 2) | `backend/app/websocket/manager.py` |
-| Dashboard WebSocket (`/ws/dashboard`) | Done (Phase 2, backend only) | `backend/app/websocket/dashboard.py` |
+| Live state WebSocket (`/ws/live`) | Done | `backend/app/websocket/live_state.py` |
 | Discord bot (commands + alert listener) | Done (Phase 1) | `bot/` |
 | Groq LLM integration | Done (Phase 1) | `bot/services/llm_client.py` |
 | `simulator.py` | Implemented (Phase 3) | `simulator/simulator.py` |
-| Web dashboard frontend | Implemented (Phase 3) | `dashboard/` |
+| Next.js frontend | Implemented | `frontend/` |
 | Redis / PostgreSQL | Deferred | — |
 
 ---
@@ -54,7 +54,7 @@ Visualization favors low-latency delivery: WebSockets push updates to the dashbo
   |---> [ In-memory Hot State ]     15 devices keyed by device_id
   |---> [ SQLite Cold State ]       state_transitions + alert_log
   |
-  |--- WS /ws/dashboard -----------> [ Web Dashboard ]  (Phase 3 frontend)
+  |--- WS /ws/live ---------------> [ Next.js Frontend ]
   |
   +--- REST /api/* -----------------> [ Discord Bot ]
   |       !status, !room, !usage
@@ -71,7 +71,7 @@ POST /api/ingest
   -> update HotStateStore
   -> append state_transitions (SQLite)
   -> evaluate_on_ingest() (alerts)
-  -> broadcast_diff() (/ws/dashboard)
+  -> broadcast_diff() (/ws/live)
   -> return { accepted, updated }
 ```
 
@@ -109,11 +109,11 @@ Ingestion uses lowercase `on`/`off` and snake_case room slugs. The REST API expo
 | `backend/app/alerts.py` | Event-driven + periodic alert evaluation |
 | `backend/app/repositories/real_repository.py` | Bot-facing reads from hot state + usage from SQLite |
 | `backend/app/api/bot.py` | REST endpoints for Discord bot |
-| `backend/app/api/websocket.py` | `/ws/alerts`, `/ws/dashboard` |
+| `backend/app/api/websocket.py` | `/ws/alerts`, `/ws/live` |
 
 **Communication channels:**
 
-1. **Dashboard WebSocket** (`/ws/dashboard`) — broadcasts state diffs after each ingest.
+1. **Live state WebSocket** (`/ws/live`) — broadcasts state diffs after each ingest.
 2. **Bot REST API** (`/api/status`, `/api/room`, `/api/usage`) — pull-only; bot does not subscribe to state broadcast.
 3. **Alert Event Stream** (`/ws/alerts`) — proactive alerts only; separate from bot REST so FastAPI never holds Discord credentials.
 
@@ -170,7 +170,7 @@ Redis was evaluated and deferred — 15 devices do not justify the operational o
 |---|---|---|
 | Discord bot commands | REST | `GET /api/status`, `/api/room/{name}`, `/api/usage` |
 | Discord proactive alerts | WebSocket | `WS /ws/alerts` |
-| Web dashboard (Phase 3) | WebSocket | `WS /ws/dashboard` |
+| Next.js frontend | WebSocket | `WS /ws/live` |
 | Simulator / manual test | REST | `POST /api/ingest` |
 
 ---
@@ -220,7 +220,7 @@ Restart the backend after changing env vars.
 3. Set `DURATION_THRESHOLD_SECONDS=20`, turn all devices in one room ON → room duration alert within ~30s on `/ws/alerts` and Discord.
 4. Set `OFFICE_END` so current time is outside hours, leave device ON → off-hours alert from periodic sweep without new ingest.
 5. Leave breach active across multiple sweeps → only one unresolved alert per type/target in SQLite.
-6. Phase 3: simulator running → dashboard and Discord stay in sync without manual curl.
+6. Simulator running → frontend and Discord stay in sync without manual curl.
 
 ---
 
@@ -244,7 +244,7 @@ Restart the backend after changing env vars.
 │   ├── api/
 │   │   ├── bot.py                 # REST for Discord
 │   │   ├── ingest.py              # POST /api/ingest
-│   │   └── websocket.py           # /ws/alerts, /ws/dashboard
+│   │   └── websocket.py           # /ws/alerts, /ws/live
 │   ├── repositories/
 │   │   ├── mock_repository.py     # Phase 1 tests
 │   │   └── real_repository.py     # Phase 2 production

@@ -2,8 +2,8 @@
 # Demo launcher — bash counterpart of scripts/demo.ps1.
 #
 # Usage:
-#   ./scripts/demo.sh                  # full stack, no bot
-#   ./scripts/demo.sh --with-bot       # full stack + Discord bot
+#   ./scripts/demo.sh                  # backend + simulator
+#   ./scripts/demo.sh --with-bot       # backend + simulator + Discord bot
 #   ./scripts/demo.sh --stop           # stop everything started here
 
 set -euo pipefail
@@ -58,11 +58,6 @@ start_demo() {
         > "$LOG_DIR/simulator.out.log" 2> "$LOG_DIR/simulator.err.log" &
     PIDS+=($!)
 
-    echo "[start] Dashboard on http://127.0.0.1:5500"
-    "$PYTHON" -m http.server 5500 --directory "$REPO_ROOT/dashboard" \
-        > "$LOG_DIR/dashboard.out.log" 2> "$LOG_DIR/dashboard.err.log" &
-    PIDS+=($!)
-
     if [ "$WITH_BOT" = "1" ]; then
         echo "[start] Discord bot"
         "$PYTHON" -m bot.bot \
@@ -76,7 +71,7 @@ start_demo() {
 ============================================================
 Demo stack is up.
   Backend:   http://127.0.0.1:8000/docs
-  Dashboard: http://127.0.0.1:5500
+  Frontend:  cd frontend && npm run dev
   Simulator: running in background, logs in $LOG_DIR/
 
 To stop everything:

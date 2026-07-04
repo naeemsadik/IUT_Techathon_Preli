@@ -11,7 +11,7 @@ token if you want to demo the bot path.
 ### Windows — pure batch (no PowerShell needed)
 
 ```cmd
-scripts\demo.cmd            REM backend + simulator + dashboard
+scripts\demo.cmd            REM backend + simulator
 scripts\demo.cmd stop       REM kill everything
 ```
 
@@ -19,7 +19,7 @@ scripts\demo.cmd stop       REM kill everything
 
 ```powershell
 # PowerShell 7+ (pwsh):
-pwsh -File scripts/demo.ps1                    # backend + simulator + dashboard
+pwsh -File scripts/demo.ps1                    # backend + simulator
 pwsh -File scripts/demo.ps1 -WithBot           # ...also launches Discord bot
 pwsh -File scripts/demo.ps1 -Stop              # stop everything
 
@@ -32,18 +32,18 @@ powershell -File scripts\demo.ps1 -Stop
 ### Linux / macOS (bash)
 
 ```bash
-./scripts/demo.sh              # backend + simulator + dashboard
+./scripts/demo.sh              # backend + simulator
 ./scripts/demo.sh --with-bot   # ...also launches Discord bot
 ./scripts/demo.sh --stop       # stop everything
 ```
 
 Then open:
 
-- **Dashboard** → <http://127.0.0.1:5500>
 - **Backend API docs** → <http://127.0.0.1:8000/docs>
+- **Frontend** → run `cd frontend && npm run dev`, then open <http://localhost:3000>
 
 The simulator drives 15 devices, alternating ON/OFF at staggered 3s / 5s / 7s
-intervals per room, and POSTs to `/api/ingest`. The dashboard updates in real
+intervals per room, and POSTs to `/api/ingest`. The frontend updates in real
 time via WebSocket.
 
 ---
@@ -88,10 +88,11 @@ Terminal 2 — **Simulator**:
 python -m simulator.simulator
 ```
 
-Terminal 3 — **Dashboard**:
+Terminal 3 — **Frontend**:
 
 ```powershell
-python -m http.server 5500 --directory dashboard
+cd frontend
+npm run dev
 ```
 
 Optional Terminal 4 — **Discord bot**:
@@ -107,7 +108,7 @@ python -m bot.bot
 1. **Show the simulator running** — point at Terminal 2, explain that it
    emulates 15 devices with staggered intervals.
 
-2. **Open the dashboard** — <http://127.0.0.1:5500>. Within 5–10 seconds,
+2. **Open the frontend** — <http://localhost:3000>. Within 5–10 seconds,
    fans start spinning and lights start glowing as the simulator toggles
    devices. The total wattage in the top card animates.
 
@@ -141,7 +142,7 @@ python -m bot.bot
    backend/app/persistence/    — SQLite cold state
    backend/app/websocket/      — WS managers
    simulator/simulator.py      — synthetic data source
-   dashboard/                  — visual frontend
+   frontend/                   — Next.js frontend
    ```
 
 ---
@@ -170,7 +171,7 @@ Invoke-RestMethod http://127.0.0.1:8000/api/usage
 ## 5. Talking Points (judges, audience)
 
 - **FastAPI is the single source of truth** — same REST and WebSocket
-  endpoints power both the dashboard and the Discord bot. They cannot drift.
+  endpoints power both the frontend and the Discord bot. They cannot drift.
 - **Dual-path alerting** — event-driven on every ingest, plus a 30 s periodic
   sweep so time-only breaches are still caught even if no device event fires.
 - **De-duplication** — a partial unique index on `alert_log` ensures only one

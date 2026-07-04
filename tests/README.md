@@ -5,4 +5,4 @@ Responsibilities:
 - Protect the replaceable interfaces that future phases will build on.
 
 Future extension:
-- Add integration tests for simulator ingestion, persistence, and dashboard streams.
+- Add integration tests for simulator ingestion, persistence, and live streams.

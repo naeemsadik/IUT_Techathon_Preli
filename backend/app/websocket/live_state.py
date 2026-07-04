@@ -1,4 +1,4 @@
-"""WebSocket connection manager for dashboard state diffs."""
+"""WebSocket connection manager for live device state diffs."""
 
 from __future__ import annotations
 
@@ -14,8 +14,8 @@ from backend.app.state import DeviceRecord
 logger = logging.getLogger(__name__)
 
 
-class DashboardWebSocketManager:
-    """Broadcasts hot-state diffs to dashboard clients."""
+class LiveStateWebSocketManager:
+    """Broadcasts hot-state diffs to live frontend clients."""
 
     def __init__(self) -> None:
         self._connections: set[WebSocket] = set()
@@ -28,7 +28,7 @@ class DashboardWebSocketManager:
         async with self._lock:
             self._connections.add(websocket)
         logger.info(
-            "WebSocket connected: /ws/dashboard (%s clients)",
+            "WebSocket connected: /ws/live (%s clients)",
             len(self._connections),
         )
 
@@ -38,7 +38,7 @@ class DashboardWebSocketManager:
         async with self._lock:
             self._connections.discard(websocket)
         logger.info(
-            "WebSocket disconnected: /ws/dashboard (%s clients)",
+            "WebSocket disconnected: /ws/live (%s clients)",
             len(self._connections),
         )
 
@@ -48,7 +48,7 @@ class DashboardWebSocketManager:
         totals: dict[str, Any],
         server_time: datetime | None = None,
     ) -> None:
-        """Broadcast a state diff to all connected dashboard clients."""
+        """Broadcast a state diff to all connected frontend clients."""
 
         if not changes:
             return

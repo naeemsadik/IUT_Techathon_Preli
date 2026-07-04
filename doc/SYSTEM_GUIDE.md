@@ -10,7 +10,7 @@ This document describes how the full system works after **Phase 2**, and how to 
 | Discord bot (REST commands + alert WebSocket listener) | Implemented (Phase 1) |
 | Shared Pydantic API contracts | Implemented (Phase 1) |
 | `simulator.py` (device emulator) | Implemented (Phase 3) |
-| Web dashboard frontend | Implemented (Phase 3) |
+| Next.js frontend | Implemented |
 | Redis / PostgreSQL | Deferred (Phase 3+) |
 
 ---
@@ -33,12 +33,12 @@ flowchart TB
         AlertEngine["Alert Engine\nevent + 30s sweep"]
         REST["REST /api/status\n/api/room /api/usage"]
         WSAlerts["WS /ws/alerts"]
-        WSDash["WS /ws/dashboard"]
+        WSLive["WS /ws/live"]
     end
 
     subgraph consumers [Consumers]
         DiscordBot["Discord Bot\n!status !room !usage"]
-        Dashboard["Web Dashboard\nPhase 3"]
+        Frontend["Next.js Frontend"]
     end
 
     ManualAPI --> Ingest
@@ -53,7 +53,7 @@ flowchart TB
     Ingest --> WSDash
     REST --> DiscordBot
     WSAlerts --> DiscordBot
-    WSDash --> Dashboard
+    WSLive --> Frontend
 ```
 
 ---
@@ -69,7 +69,7 @@ sequenceDiagram
     participant Hot as HotStateStore
     participant DB as SQLite
     participant Alerts as AlertEngine
-    participant WSD as /ws/dashboard
+    participant WSD as /ws/live
     participant WSA as /ws/alerts
 
     Source->>API: JSON heartbeat or state_change
@@ -154,7 +154,7 @@ All devices start **OFF** with `power_draw_w: 0` until the first ingest updates 
 - **File:** `backend/app/state.py`
 - **Key:** `device_id`
 - **Fields:** `room`, `device_type`, `status` (`on`/`off`), `power_draw_w`, `last_changed`
-- **Used for:** `/api/status`, `/api/room/{name}`, alert duration checks, dashboard WebSocket diffs
+- **Used for:** `/api/status`, `/api/room/{name}`, alert duration checks, live WebSocket diffs
 - **Wattage rule:** API `wattage` = `power_draw_w` when ON, else `0`
 
 ### Cold state (SQLite)
@@ -223,7 +223,7 @@ Base URL: `http://127.0.0.1:8000`
 | Path | Description |
 |---|---|
 | `WS /ws/alerts` | Real-time alert stream (Discord bot subscribes here) |
-| `WS /ws/dashboard` | Hot-state diffs after each ingest (for future dashboard) |
+| `WS /ws/live` | Hot-state diffs after each ingest for the frontend |
 
 ### Ingestion payload types
 
@@ -310,20 +310,21 @@ python -m simulator.simulator
 
 Drives all 15 devices with staggered 3s/5s/7s intervals per room.
 
-### Start the dashboard (Phase 3)
+### Start the frontend
 
 In another terminal:
 
 ```powershell
-python -m http.server 5500 --directory dashboard
+cd frontend
+npm run dev
 ```
 
-Open <http://127.0.0.1:5500>.
+Open <http://localhost:3000>.
 
 ### Run everything in one command (Phase 3)
 
 ```powershell
-pwsh -File scripts/demo.ps1            # backend + simulator + dashboard
+pwsh -File scripts/demo.ps1            # backend + simulator
 pwsh -File scripts/demo.ps1 -WithBot   # adds Discord bot
 ```
 
@@ -475,7 +476,7 @@ Full bot setup: [DISCORD_BOT_SETUP.md](../DISCORD_BOT_SETUP.md)
 │   ├── api/
 │   │   ├── bot.py          # REST for Discord bot
 │   │   ├── ingest.py       # POST /api/ingest
-│   │   └── websocket.py    # /ws/alerts, /ws/dashboard
+│   │   └── websocket.py    # /ws/alerts, /ws/live
 │   ├── repositories/
 │   │   ├── mock_repository.py   # Phase 1 tests only
 │   │   └── real_repository.py   # Phase 2 production

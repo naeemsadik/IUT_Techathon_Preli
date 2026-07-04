@@ -6,4 +6,4 @@ Responsibilities:
 - Include API and WebSocket routers.
 
 Future extension:
-- Register simulator ingestion, persistence, dashboard, and alert-engine components here.
+- Register simulator ingestion, persistence, frontend updates, and alert-engine components here.

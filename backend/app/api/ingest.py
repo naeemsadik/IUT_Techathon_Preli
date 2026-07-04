@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from backend.app.alerts import AlertEngine
 from backend.app.dependencies import (
     get_alert_engine,
-    get_dashboard_ws,
+    get_live_state_ws,
     get_database,
     get_hot_store,
 )
@@ -18,7 +18,7 @@ from backend.app.schemas.ingestion import (
     StateChangePayload,
 )
 from backend.app.state import DeviceUpdateInput, HotStateStore
-from backend.app.websocket.dashboard import DashboardWebSocketManager
+from backend.app.websocket.live_state import LiveStateWebSocketManager
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["ingest"])
@@ -30,7 +30,7 @@ async def ingest_payload(
     hot_store: HotStateStore = Depends(get_hot_store),
     database: Database = Depends(get_database),
     alert_engine: AlertEngine = Depends(get_alert_engine),
-    dashboard_ws: DashboardWebSocketManager = Depends(get_dashboard_ws),
+    live_state_ws: LiveStateWebSocketManager = Depends(get_live_state_ws),
 ) -> IngestResponse:
     """Ingest simulator payloads and update hot/cold state."""
 
@@ -60,7 +60,7 @@ async def ingest_payload(
         database.log_transition(record, server_time)
 
     await alert_engine.evaluate_on_ingest(updated, server_time)
-    await dashboard_ws.broadcast_diff(updated, hot_store.totals(), server_time)
+    await live_state_ws.broadcast_diff(updated, hot_store.totals(), server_time)
 
     logger.info(
         "Ingested %s from %s: %s updates",

@@ -1,0 +1,37 @@
+# Root Docker Compose file for Coolify backend deployment.
+#
+# Coolify should deploy this as a Docker Compose resource. The service listens
+# on container port 8000; do not publish "8000:8000" on the VPS because Coolify's
+# proxy should own public traffic.
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: office-energy-backend:latest
+    restart: unless-stopped
+    expose:
+      - "8000"
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "8000"
+      DEBUG: "${DEBUG:-false}"
+      OFFICE_START: "${OFFICE_START:-09:00}"
+      OFFICE_END: "${OFFICE_END:-17:00}"
+      DURATION_THRESHOLD_SECONDS: "${DURATION_THRESHOLD_SECONDS:-7200}"
+      DEVICE_DURATION_THRESHOLD_SECONDS: "${DEVICE_DURATION_THRESHOLD_SECONDS:-3600}"
+      ALERT_SWEEP_INTERVAL_SECONDS: "${ALERT_SWEEP_INTERVAL_SECONDS:-30}"
+      SQLITE_PATH: "/app/data/office_energy.db"
+      CORS_ALLOW_ORIGINS: "${CORS_ALLOW_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}"
+    volumes:
+      - office-energy-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health').status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  office-energy-data:
+    driver: local

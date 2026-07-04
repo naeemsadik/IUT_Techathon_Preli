@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useDashboardSocket } from "@/lib/use-live-store";
+import { useLiveStateSocket } from "@/lib/use-live-store";
 import { getStatus } from "@/lib/api";
 import { useLiveStore } from "@/lib/use-live-store";
 import { ROOMS } from "@/lib/types";
@@ -11,7 +11,7 @@ export function LiveStoreProvider({ children }: { children: React.ReactNode }) {
   const setConnected = useLiveStore((s) => s.setConnected);
 
   // Establish the WebSocket once at app start.
-  useDashboardSocket();
+  useLiveStateSocket();
 
   // Initial REST seed — load /api/status, then refresh every 30s as a safety net.
   useEffect(() => {

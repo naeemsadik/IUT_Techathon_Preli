@@ -45,9 +45,9 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-muted-foreground">
             <p>
-              Office Energy Monitor — Next.js 14 dashboard backed by a FastAPI service.
+              Office Energy Monitor - Next.js 14 frontend backed by a FastAPI service.
               All device state flows through <code className="rounded bg-muted px-1">POST /api/ingest</code>;
-              live updates fan out via <code className="rounded bg-muted px-1">/ws/dashboard</code> and{" "}
+              live updates fan out via <code className="rounded bg-muted px-1">/ws/live</code> and{" "}
               <code className="rounded bg-muted px-1">/ws/alerts</code>.
             </p>
             <p>

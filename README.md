@@ -1,8 +1,8 @@
 # Office Energy Monitoring System
 
-Monitor office energy usage across three rooms (Drawing Room, Work Room 1, Work Room 2) with a FastAPI backend, SQLite logging, real-time alerts, a Discord bot interface, a synthetic device simulator, and a live web dashboard.
+Monitor office energy usage across three rooms (Drawing Room, Work Room 1, Work Room 2) with a FastAPI backend, SQLite logging, real-time alerts, a Discord bot interface, a synthetic device simulator, and a Next.js frontend.
 
-**What's working today:** ingestion API, hot/cold state, dual-path alert engine (off-hours, room-duration, per-device-duration), REST + WebSocket endpoints, Discord bot with optional Groq LLM replies, `simulator.py` data source, and a vanilla-JS web dashboard.
+**What's working today:** ingestion API, hot/cold state, dual-path alert engine (off-hours, room-duration, per-device-duration), REST + WebSocket endpoints, Discord bot with optional Groq LLM replies, `simulator.py` data source, and the Next.js frontend in `frontend/`.
 
 ---
 
@@ -47,15 +47,14 @@ copy bot\.env.example bot\.env      # optional — only needed for Discord bot
 
 The backend runs with defaults out of the box. The bot requires a Discord token (see [Discord bot setup](#discord-bot-setup) below).
 
-### 3. Start the full stack
+### 3. Start backend + simulator
 
-The fastest path is the demo launcher, which starts the backend, simulator,
-and dashboard in one command.
+The demo launcher starts the backend and simulator in one command.
 
 **Windows — pure batch (no PowerShell):**
 
 ```cmd
-scripts\demo.cmd            REM start backend + simulator + dashboard
+scripts\demo.cmd            REM start backend + simulator
 scripts\demo.cmd stop       REM stop everything
 ```
 
@@ -77,8 +76,17 @@ powershell -File scripts\demo.ps1 -Stop        # stop everything
 
 Once it's up:
 
-- **Dashboard** → <http://127.0.0.1:5500>
 - **Backend API docs** → <http://127.0.0.1:8000/docs>
+
+Start the frontend from `frontend/`:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+- **Frontend** → <http://localhost:3000>
 
 Or run the components manually in separate terminals — see [Running Everything Together](#running-everything-together) below.
 
@@ -98,7 +106,7 @@ IUT_Techathon_Preli/
 ├── bot/                  # Discord bot
 ├── shared/models/        # Pydantic API contracts
 ├── simulator/            # 15-device synthetic data source (Phase 3)
-├── dashboard/            # Vanilla HTML/CSS/JS live frontend (Phase 3)
+├── frontend/             # Next.js frontend
 ├── scripts/              # One-command demo launchers
 ├── examples/             # Sample ingest JSON files
 ├── tests/                # pytest suite
@@ -131,7 +139,7 @@ uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
 | `GET` | `/api/usage` | Daily / weekly / monthly kWh |
 | `GET` | `/api/health` | Server health check |
 | `WS` | `/ws/alerts` | Real-time alert stream |
-| `WS` | `/ws/dashboard` | Hot-state diffs (for future dashboard) |
+| `WS` | `/ws/live` | Hot-state diffs for the Next.js frontend |
 
 Interactive docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
@@ -266,13 +274,13 @@ The bot also listens on `/ws/alerts` and posts real alerts to the configured cha
 
 ## Running Everything Together
 
-Open **four terminals** (or use `scripts/demo.ps1`):
+Open separate terminals (or use `scripts/demo.ps1` for backend + simulator):
 
 | Terminal | Command | URL / Output |
 |---|---|---|
 | 1 — Backend | `uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload` | <http://127.0.0.1:8000> |
 | 2 — Simulator | `python -m simulator.simulator` | POSTs to `/api/ingest` |
-| 3 — Dashboard | `python -m http.server 5500 --directory dashboard` | <http://127.0.0.1:5500> |
+| 3 — Frontend | `cd frontend && npm run dev` | <http://localhost:3000> |
 | 4 — Discord bot (optional) | `python -m bot.bot` | Listens on `/ws/alerts` |
 
 ---

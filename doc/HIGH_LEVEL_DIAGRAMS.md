@@ -1,6 +1,6 @@
 # High-Level System Diagrams (Phase 3 Complete)
 
-These diagrams assume **Phase 3 is fully implemented**: `simulator.py` is running, the web dashboard frontend is live, and device state flows end to end from simulation to both the Discord bot and the live dashboard.
+These diagrams assume the current stack is running: `simulator.py`, the Next.js frontend, and device state flowing end to end from simulation to both the Discord bot and the browser UI.
 
 Two versions are shown:
 
@@ -13,7 +13,7 @@ Two versions are shown:
 
 ## Version 1 — In-Memory + SQLite (Current Stack)
 
-No Redis. No PostgreSQL. Matches what is implemented today, extended with the Phase 3 simulator and dashboard frontend.
+No Redis. No PostgreSQL. Matches what is implemented today with the simulator and Next.js frontend.
 
 ### System overview
 
@@ -34,11 +34,11 @@ flowchart TB
         Engine["Alert Engine\nevent-driven + 30s sweep"]
         REST["REST /api/status\n/api/room /api/usage"]
         WSAlert["WS /ws/alerts"]
-        WSDash["WS /ws/dashboard"]
+        WSDash["WS /ws/live"]
     end
 
     subgraph clients [Client Layer]
-        Dash["Web Dashboard\nlive SVG / DOM\npower meter + alerts"]
+        Dash["Next.js Frontend\npower meter + alerts"]
         Bot["Discord Bot\ndiscord.py"]
     end
 
@@ -79,9 +79,9 @@ sequenceDiagram
     participant Hot as Hot State memory
     participant DB as SQLite
     participant Alerts as Alert Engine
-    participant WSD as WS /ws/dashboard
+    participant WSD as WS /ws/live
     participant WSA as WS /ws/alerts
-    participant Dash as Web Dashboard
+    participant Dash as Next.js Frontend
     participant REST as REST /api/*
     participant Bot as Discord Bot
     participant WebUser as Browser User
@@ -104,7 +104,7 @@ sequenceDiagram
 
     Ingest->>WSD: broadcast_diff changes totals
     WSD->>Dash: state_diff JSON
-    Dash->>Dash: Update fan spin light glow power meter
+    Dash->>Dash: Update fan state light state power meter
     Dash->>WebUser: Live UI update no refresh
 
     Note over DCUser: User types !status
@@ -160,7 +160,7 @@ flowchart TB
         Engine["Alert Engine\nevent-driven + 30s sweep"]
         REST["REST /api/status\n/api/room /api/usage"]
         WSAlert["WS /ws/alerts"]
-        WSDash["WS /ws/dashboard"]
+        WSDash["WS /ws/live"]
     end
 
     subgraph persistence [Persistence Layer]
@@ -169,7 +169,7 @@ flowchart TB
     end
 
     subgraph clients [Client Layer]
-        Dash["Web Dashboard\nlive SVG / DOM\npower meter + alerts"]
+        Dash["Next.js Frontend\npower meter + alerts"]
         Bot["Discord Bot\ndiscord.py"]
     end
 
@@ -208,9 +208,9 @@ sequenceDiagram
     participant Redis as Redis Hot State
     participant PG as PostgreSQL
     participant Alerts as Alert Engine
-    participant WSD as WS /ws/dashboard
+    participant WSD as WS /ws/live
     participant WSA as WS /ws/alerts
-    participant Dash as Web Dashboard
+    participant Dash as Next.js Frontend
     participant REST as REST /api/*
     participant Bot as Discord Bot
     participant WebUser as Browser User
@@ -233,7 +233,7 @@ sequenceDiagram
 
     Ingest->>WSD: broadcast_diff
     WSD->>Dash: state_diff JSON
-    Dash->>WebUser: Live dashboard update
+    Dash->>WebUser: Live frontend update
 
     Note over DCUser: User types !room Work Room 1
     DCUser->>Bot: !room Work Room 1
@@ -242,9 +242,9 @@ sequenceDiagram
     REST-->>Bot: Room JSON
     Bot->>DCUser: Friendly reply
 
-    Note over WebUser: Dashboard open in browser
+    Note over WebUser: Frontend open in browser
     WebUser->>Dash: Page load then WS connect
-    Dash->>WSD: Subscribe /ws/dashboard
+    Dash->>WSD: Subscribe /ws/live
     Note over Dash,WebUser: Subsequent ingests push diffs automatically
 ```
 
@@ -283,7 +283,7 @@ flowchart TB
         S1[simulator.py] --> B1[FastAPI]
         B1 --> M1[Memory Hot State]
         B1 --> Q1[SQLite Cold State]
-        B1 --> D1[Dashboard WS]
+        B1 --> D1[Live State WS]
         B1 --> Bot1[Discord Bot]
     end
 
@@ -292,7 +292,7 @@ flowchart TB
         S2[simulator.py] --> B2[FastAPI]
         B2 --> R2[Redis Hot State]
         B2 --> P2[PostgreSQL Cold State]
-        B2 --> D2[Dashboard WS]
+        B2 --> D2[Live State WS]
         B2 --> Bot2[Discord Bot]
     end
 ```
@@ -315,7 +315,7 @@ Both versions use the same **client-facing protocol** — only the persistence l
 ```mermaid
 flowchart LR
     subgraph push [Push — real-time]
-        WSD["WS /ws/dashboard\nstate_diff after ingest"]
+        WSD["WS /ws/live\nstate_diff after ingest"]
         WSA["WS /ws/alerts\nAlert on rule breach"]
     end
 
@@ -327,11 +327,11 @@ flowchart LR
     Backend --> WSA
     Backend --> REST
 
-    WSD --> Dashboard["Web Dashboard"]
+    WSD --> Frontend["Next.js Frontend"]
     WSA --> BotAlert["Discord Bot\nalert listener"]
     REST --> BotCmd["Discord Bot\ncommands"]
 
-    Dashboard --> WebUser["Browser user\nlive updates"]
+    Frontend --> WebUser["Browser user\nlive updates"]
     BotAlert --> DiscordUser["Discord user\nproactive alerts"]
     BotCmd --> DiscordUser
 ```
@@ -339,7 +339,7 @@ flowchart LR
 | Channel | Direction | Consumer | Payload |
 |---|---|---|---|
 | `POST /api/ingest` | Simulator → Backend | Ingestion gateway | `heartbeat` or `state_change` |
-| `WS /ws/dashboard` | Backend → Dashboard | Browser | `state_diff` with changes + wattage totals |
+| `WS /ws/live` | Backend → Frontend | Browser | `state_diff` with changes + wattage totals |
 | `WS /ws/alerts` | Backend → Discord bot | Bot alert task | `Alert` JSON (id, message, severity, created_at) |
 | `GET /api/status` | Discord bot → Backend | On `!status` | `OfficeStatus` envelope |
 | `GET /api/room/{name}` | Discord bot → Backend | On `!room` | `Room` envelope |
@@ -355,7 +355,7 @@ This is the story both diagrams tell:
 2. **Simulator sends JSON** to `POST /api/ingest` as a `state_change` payload.
 3. **Backend stamps time**, writes to hot state (memory or Redis) and cold store (SQLite or PostgreSQL).
 4. **Alert engine evaluates** rules immediately; periodic sweep catches time-only breaches.
-5. **Dashboard path (push):** `/ws/dashboard` broadcasts a `state_diff` → frontend updates fan animation and power meter → **browser user sees live change**.
+5. **Frontend path (push):** `/ws/live` broadcasts a `state_diff` → frontend updates device state and power meter → **browser user sees live change**.
 6. **Alert path (push):** if a rule fires → `/ws/alerts` pushes `Alert` JSON → Discord bot posts to alert channel → **Discord user sees proactive warning**.
 7. **Command path (pull):** Discord user types `!status` → bot calls `GET /api/status` → reads hot state → LLM optionally rewrites → **Discord user sees current summary**.
 

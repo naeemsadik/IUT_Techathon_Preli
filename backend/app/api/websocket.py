@@ -22,15 +22,15 @@ async def alerts(websocket: WebSocket) -> None:
         await manager.disconnect(websocket)
 
 
-@router.websocket("/ws/dashboard")
-async def dashboard(websocket: WebSocket) -> None:
-    """Stream hot-state diffs to dashboard clients."""
+@router.websocket("/ws/live")
+async def live_state(websocket: WebSocket) -> None:
+    """Stream hot-state diffs to frontend clients."""
 
-    manager = websocket.app.state.dashboard_ws
+    manager = websocket.app.state.live_state_ws
     await manager.connect(websocket)
     try:
         await manager.keep_alive(websocket)
     except WebSocketDisconnect:
-        logger.info("WebSocket disconnected: /ws/dashboard")
+        logger.info("WebSocket disconnected: /ws/live")
     finally:
         await manager.disconnect(websocket)

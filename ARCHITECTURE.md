@@ -15,7 +15,7 @@ The full system architecture is documented in **[doc/ARCHITECTURE.md](doc/ARCHIT
   |
   |-- REST /api/* --------> Discord Bot (!status, !room, !usage)
   |-- WS /ws/alerts ------> Discord Bot (proactive alerts)
-  `-- WS /ws/dashboard ---> Web Dashboard (Phase 3)
+  `-- WS /ws/live --------> Next.js Frontend
 ```
 
 ## Layering
@@ -37,6 +37,6 @@ The full system architecture is documented in **[doc/ARCHITECTURE.md](doc/ARCHIT
 |---|---|
 | **1** | Mock backend, Discord bot, shared models, mock alert WebSocket |
 | **2** | Real ingestion, hot/cold state, alert engine, `RealBotRepository`, kWh usage |
-| **3** | `simulator.py`, web dashboard frontend (planned) |
+| **3** | `simulator.py`, Next.js frontend |
 
 See [doc/ARCHITECTURE.md](doc/ARCHITECTURE.md) for design decisions, alert rules, configuration, and validation checklist.

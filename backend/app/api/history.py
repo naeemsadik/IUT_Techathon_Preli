@@ -1,6 +1,6 @@
 """Historical analytics endpoint.
 
-Returns time-bucketed device state and power-draw history for the dashboard
+Returns time-bucketed device state and power-draw history for frontend
 charts. Data is computed from the SQLite `state_transitions` log.
 """
 
@@ -51,7 +51,9 @@ def _bucket_start(ts: datetime, bucket_minutes: int) -> datetime:
 
 @router.get("/history", response_model=APIResponse[dict[str, Any]])
 async def get_history(
-    range: Literal["1h", "24h", "7d", "30d"] = Query("24h", description="Time range"),
+    range_key: Literal["1h", "24h", "7d", "30d"] = Query(
+        "24h", description="Time range", alias="range"
+    ),
     database: Database = Depends(get_database),
 ) -> APIResponse[dict[str, Any]]:
     """Return time-bucketed power-draw history per room and per device.
@@ -91,8 +93,8 @@ async def get_history(
         }
     """
 
-    hours = _RANGE_HOURS[range]
-    bucket_minutes = _BUCKET_MINUTES[range]
+    hours = _RANGE_HOURS[range_key]
+    bucket_minutes = _BUCKET_MINUTES[range_key]
     now = datetime.now(UTC)
     since = now - timedelta(hours=hours)
 
@@ -179,12 +181,14 @@ async def get_history(
 
     devices_payload: list[dict[str, Any]] = []
     for device_id in sorted(by_device.keys()):
-        # Find device type/room from any of its rows.
+        # Find room from any of its rows; derive device_type from id naming
+        # convention `{room_slug}_{fan|light}_{n}`.
         first = by_device[device_id][0]
+        device_type = "fan" if "_fan_" in device_id else "light"
         devices_payload.append({
             "device_id": device_id,
             "room": first.room,
-            "device_type": first.device_type,
+            "device_type": device_type,
             "series": device_buckets[device_id],
         })
 
@@ -195,7 +199,7 @@ async def get_history(
         totals_series.append({"t": bucket_starts[i].isoformat() + "Z", "watts": round(total_w, 1)})
 
     payload = {
-        "range": range,
+        "range": range_key,
         "bucket_minutes": bucket_minutes,
         "since": since.isoformat() + "Z",
         "now": now.isoformat() + "Z",

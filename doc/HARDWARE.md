@@ -135,7 +135,7 @@ To swap from `simulator.py` to real ESP32 hardware:
 3. Stop `simulator.py`.
 4. Power-cycle each room's MCU; the first heartbeat per room syncs
    state with the backend (matches `last_changed = now`).
-5. Confirm via the dashboard or `!status` that real device readings
+5. Confirm via the frontend or `!status` that real device readings
    appear within HEARTBEAT_INTERVAL_MS.
 
 The backend is **unaware** of where the payloads come from. Any source that
