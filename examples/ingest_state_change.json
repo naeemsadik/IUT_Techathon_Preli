@@ -1,0 +1,15 @@
+{
+  "message_type": "state_change",
+  "source_id": "esp32-work-room-1",
+  "sequence": 1,
+  "device_timestamp": "2026-07-04T14:00:30Z",
+  "changes": [
+    {
+      "device_id": "work_room_1_fan_1",
+      "room": "work_room_1",
+      "device_type": "fan",
+      "status": "on",
+      "power_draw_w": 60
+    }
+  ]
+}

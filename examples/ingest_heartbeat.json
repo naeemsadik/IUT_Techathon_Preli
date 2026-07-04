@@ -1,0 +1,43 @@
+{
+  "message_type": "heartbeat",
+  "source_id": "esp32-drawing-room",
+  "sequence": 1,
+  "device_timestamp": "2026-07-04T14:00:00Z",
+  "devices": [
+    {
+      "device_id": "drawing_room_fan_1",
+      "room": "drawing_room",
+      "device_type": "fan",
+      "status": "off",
+      "power_draw_w": 60
+    },
+    {
+      "device_id": "drawing_room_fan_2",
+      "room": "drawing_room",
+      "device_type": "fan",
+      "status": "off",
+      "power_draw_w": 60
+    },
+    {
+      "device_id": "drawing_room_light_1",
+      "room": "drawing_room",
+      "device_type": "light",
+      "status": "off",
+      "power_draw_w": 15
+    },
+    {
+      "device_id": "drawing_room_light_2",
+      "room": "drawing_room",
+      "device_type": "light",
+      "status": "off",
+      "power_draw_w": 15
+    },
+    {
+      "device_id": "drawing_room_light_3",
+      "room": "drawing_room",
+      "device_type": "light",
+      "status": "off",
+      "power_draw_w": 15
+    }
+  ]
+}

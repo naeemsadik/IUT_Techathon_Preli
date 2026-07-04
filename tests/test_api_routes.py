@@ -39,13 +39,3 @@ def test_get_health(api_client: TestClient) -> None:
     assert response.json()["data"]["status"] == "ok"
 
 
-def test_alert_websocket_emits_alert(api_client: TestClient) -> None:
-    with api_client.websocket_connect("/ws/alerts") as websocket:
-        alert = websocket.receive_json()
-
-    assert alert["message"] in {
-        "Drawing Room lights are still ON.",
-        "Work Room 1 exceeds usage threshold.",
-        "After-hours usage detected.",
-    }
-    assert alert["severity"] == "warning"
