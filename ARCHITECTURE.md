@@ -1,45 +1,42 @@
-# Phase 1 Architecture
+# Architecture Overview
 
-This phase implements only the Discord bot-facing foundation from the larger Office Energy Monitoring System architecture.
+The full system architecture is documented in **[doc/ARCHITECTURE.md](doc/ARCHITECTURE.md)**.
 
-## Components
+## Current Phase: 2 (Backend + Bot)
 
 ```text
-Discord Bot
-  | commands: !status, !room, !usage, !ask
-  v
-ApiClient
-  | REST
-  v
-FastAPI routes
-  v
-BotService
-  v
-BotRepository interface
-  v
-MockBotRepository
-
-FastAPI /ws/alerts
-  | mock alert events
-  v
-Discord Bot alert listener
-  v
-Groq LLM client
-  v
-Friendly Discord message
+[ curl / simulator Phase 3 ]
+         |
+         v POST /api/ingest
+[ FastAPI Backend :8000 ]
+  |-- Hot State (in-memory, 15 devices)
+  |-- SQLite (transitions, alerts, kWh)
+  |-- Alert Engine (event + 30s sweep)
+  |
+  |-- REST /api/* --------> Discord Bot (!status, !room, !usage)
+  |-- WS /ws/alerts ------> Discord Bot (proactive alerts)
+  `-- WS /ws/dashboard ---> Web Dashboard (Phase 3)
 ```
 
-## Boundaries
+## Layering
 
-- Routes only handle HTTP concerns.
-- Services coordinate repository calls and future business logic.
-- Repositories provide data access and are replaceable.
-- Discord commands format data and never contain HTTP code.
-- Discord commands pass deterministic responses through the LLM client when configured.
-- Shared models define the API contract for both backend and bot.
+| Layer | Role |
+|---|---|
+| `shared/models/` | Pydantic API contracts shared by backend and bot |
+| `backend/app/api/` | HTTP and WebSocket routes |
+| `backend/app/services/` | Business coordination (`BotService`) |
+| `backend/app/repositories/` | Data access (`RealBotRepository` in production) |
+| `backend/app/state.py` | In-memory hot state |
+| `backend/app/persistence/` | SQLite cold state |
+| `backend/app/alerts.py` | Dual-path alerting |
+| `bot/` | Discord commands, API client, LLM client, alert listener |
 
-## Future Replacement Path
+## Phase History
 
-The mock repository can later be replaced by a SQL, Redis, or simulator-backed implementation that satisfies the same `BotRepository` protocol. The public REST contract and Discord command code should remain stable.
+| Phase | Scope |
+|---|---|
+| **1** | Mock backend, Discord bot, shared models, mock alert WebSocket |
+| **2** | Real ingestion, hot/cold state, alert engine, `RealBotRepository`, kWh usage |
+| **3** | `simulator.py`, web dashboard frontend (planned) |
 
-The full upstream architecture reference remains in `doc/ARCHITECTURE.md`.
+See [doc/ARCHITECTURE.md](doc/ARCHITECTURE.md) for design decisions, alert rules, configuration, and validation checklist.

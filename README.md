@@ -1,81 +1,347 @@
-# Office Energy Monitoring System - Bot Phase
+# Office Energy Monitoring System
 
-This repository currently implements Phase 1 only: a mock FastAPI server, a Discord bot, shared Pydantic models, a mock alert WebSocket stream, documentation, and tests.
+Monitor office energy usage across three rooms (Drawing Room, Work Room 1, Work Room 2) with a FastAPI backend, SQLite logging, real-time alerts, and a Discord bot interface.
 
-The simulator, dashboard, database, Redis, real alert engine, power calculations, device ingestion, and LLM integration are intentionally out of scope for this phase.
+**What's working today:** ingestion API, hot/cold state, alert engine, REST + WebSocket endpoints, Discord bot with optional Groq LLM replies.
 
-## Architecture
+**Coming in Phase 3:** `simulator.py` device emulator, web dashboard frontend.
 
-- `shared/` defines the API contract once with Pydantic v2 models.
-- `backend/` exposes bot-facing REST endpoints and `/ws/alerts`.
-- `backend/app/repositories/` hides mock data behind `BotRepository`.
-- `backend/app/services/` contains the service layer used by routes.
-- `bot/` contains Discord prefix commands, the reusable `ApiClient`, the Groq LLM client, and the alert listener.
+---
 
-The intended future swap is:
+## Prerequisites
 
-```text
-MockBotRepository -> RealBotRepository
-```
+| Requirement | Notes |
+|---|---|
+| **Python 3.12+** | Check with `python --version` |
+| **Git** | To clone the repository |
+| **Discord account** | Only if running the Discord bot |
+| **Groq API key** | Optional — bot falls back to plain text without it |
 
-Routes and Discord commands should not need to change when that happens.
+---
 
-## Setup
+## Quick Start (5 minutes)
 
-```bash
+### 1. Clone and install
+
+```powershell
+git clone <repository-url>
+cd IUT_Techathon_Preli
+
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-Copy the example environment files before running services:
+On macOS/Linux:
 
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 2. Configure environment
+
+```powershell
 copy backend\.env.example backend\.env
 copy bot\.env.example bot\.env
 ```
 
-## Run Backend
+The backend runs with defaults out of the box. The bot requires a Discord token (see [Discord bot setup](#discord-bot-setup) below).
 
-From the repository root:
+### 3. Start the backend
 
-```bash
+```powershell
 uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-Available endpoints:
+Verify:
 
-- `GET /api/status`
-- `GET /api/room/{room_name}`
-- `GET /api/usage`
-- `GET /api/health`
-- `WS /ws/alerts`
-
-## Run Bot
-
-Set `DISCORD_TOKEN`, `API_BASE_URL`, `ALERT_CHANNEL_ID`, `COMMAND_PREFIX`, `GROQ_API_KEY`, `GROQ_MODEL`, and `LLM_ENABLED` in `bot/.env`, then run:
-
-```bash
-python -m bot.bot
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/api/health
 ```
 
-Commands:
+### 4. Send test data (simulate a device toggle)
 
-- `!status`
-- `!room Drawing Room`
-- `!usage`
-- `!ask Why is the power high?`
+```powershell
+curl.exe -X POST "http://127.0.0.1:8000/api/ingest" `
+  -H "Content-Type: application/json" `
+  --data-binary "@examples/ingest_state_change.json"
+```
 
-The bot also connects to `/ws/alerts` and posts fake alerts to the configured Discord channel. When Groq is configured, command responses and alert messages are rewritten into friendly conversational replies. If Groq is unavailable, the bot falls back to deterministic formatted text.
+Check status:
 
-## Testing
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/api/status
+```
 
-```bash
+You should see **Work Room 1 Fan 1** ON at **60W**.
+
+### 5. Run tests
+
+```powershell
 pytest
 ```
 
-Tests cover the mock repository, service layer, FastAPI routes with dependency overrides, command formatting, the mock API client transport, and the Groq LLM client transport.
+---
 
-## Future Phases
+## Project Structure
 
-Planned additions include simulator ingestion, SQLite, Redis, dashboard WebSockets, a real alert engine, usage calculations, and LLM-assisted Discord responses.
+```text
+IUT_Techathon_Preli/
+├── backend/app/          # FastAPI server (ingestion, state, alerts, SQLite)
+├── bot/                  # Discord bot
+├── shared/models/        # Pydantic API contracts
+├── examples/             # Sample ingest JSON files
+├── tests/                # pytest suite
+└── doc/                  # Architecture and guides
+    ├── ARCHITECTURE.md   # System design
+    ├── SYSTEM_GUIDE.md   # How it works + detailed testing
+    └── SIMULATOR.md      # Phase 3 simulator guide
+```
+
+---
+
+## Running the Backend
+
+From the repository root with the virtual environment activated:
+
+```powershell
+uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+### API Endpoints
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/ingest` | Ingest device state (heartbeat or state_change) |
+| `GET` | `/api/status` | Full office status and wattage |
+| `GET` | `/api/room/{room_name}` | Single room (`Drawing Room` or `drawing_room`) |
+| `GET` | `/api/usage` | Daily / weekly / monthly kWh |
+| `GET` | `/api/health` | Server health check |
+| `WS` | `/ws/alerts` | Real-time alert stream |
+| `WS` | `/ws/dashboard` | Hot-state diffs (for future dashboard) |
+
+Interactive docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+
+### Backend Environment Variables
+
+Edit `backend/.env` (copy from `backend/.env.example`):
+
+| Variable | Default | Description |
+|---|---|---|
+| `HOST` | `127.0.0.1` | Bind host |
+| `PORT` | `8000` | Bind port |
+| `DEBUG` | `false` | Enable debug logging |
+| `OFFICE_START` | `09:00` | Office hours start (24h, HH:MM) |
+| `OFFICE_END` | `17:00` | Office hours end |
+| `DURATION_THRESHOLD_SECONDS` | `7200` | Room all-ON alert threshold (use `20` for demos) |
+| `ALERT_SWEEP_INTERVAL_SECONDS` | `30` | Background alert sweep interval |
+| `SQLITE_PATH` | `data/office_energy.db` | SQLite database file |
+
+SQLite data is created automatically on first startup.
+
+---
+
+## Feeding Data to the Backend
+
+Until `simulator.py` lands (Phase 3), use manual API calls or the example JSON files.
+
+### Option A — JSON file (recommended on Windows)
+
+```powershell
+# Turn on a fan
+curl.exe -X POST "http://127.0.0.1:8000/api/ingest" `
+  -H "Content-Type: application/json" `
+  --data-binary "@examples/ingest_state_change.json"
+
+# Sync a full room (Drawing Room heartbeat)
+curl.exe -X POST "http://127.0.0.1:8000/api/ingest" `
+  -H "Content-Type: application/json" `
+  --data-binary "@examples/ingest_heartbeat.json"
+```
+
+### Option B — PowerShell native
+
+```powershell
+$body = @{
+  message_type     = "state_change"
+  source_id        = "esp32-work-room-1"
+  sequence         = 1
+  device_timestamp = "2026-07-04T14:00:30Z"
+  changes          = @(
+    @{
+      device_id    = "work_room_1_fan_1"
+      room         = "work_room_1"
+      device_type  = "fan"
+      status       = "on"
+      power_draw_w = 60
+    }
+  )
+} | ConvertTo-Json -Depth 5
+
+Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/ingest" -Method POST `
+  -ContentType "application/json" -Body $body
+```
+
+### Option C — Phase 3 simulator
+
+```powershell
+python -m simulator.simulator
+```
+
+See [doc/SIMULATOR.md](doc/SIMULATOR.md) for the implementation guide.
+
+> **PowerShell tip:** `curl` is an alias for `Invoke-WebRequest`. Use `curl.exe` for real curl, or `Invoke-RestMethod` for native HTTP. Avoid escaped `\"` inside double-quoted strings — use single quotes or a JSON file instead.
+
+---
+
+## Discord Bot Setup
+
+### 1. Create a Discord bot
+
+1. Open the [Discord Developer Portal](https://discord.com/developers/applications).
+2. Create a new application → **Bot** → copy the token.
+3. Enable **Message Content Intent** under Privileged Gateway Intents.
+4. Invite the bot to your server (OAuth2 → URL Generator → `bot` scope → Send Messages permission).
+
+### 2. Get the alert channel ID
+
+1. Enable **Developer Mode** in Discord (Settings → Advanced).
+2. Right-click the target channel → **Copy Channel ID**.
+
+### 3. Configure `bot/.env`
+
+```env
+DISCORD_TOKEN=your-discord-bot-token
+API_BASE_URL=http://127.0.0.1:8000
+ALERT_CHANNEL_ID=your-discord-channel-id
+COMMAND_PREFIX=!
+GROQ_API_KEY=your-groq-api-key
+GROQ_MODEL=llama-3.3-70b-versatile
+LLM_ENABLED=true
+```
+
+Set `LLM_ENABLED=false` or leave `GROQ_API_KEY` empty to skip LLM rewriting.
+
+Full walkthrough: [DISCORD_BOT_SETUP.md](DISCORD_BOT_SETUP.md)
+
+### 4. Start the bot
+
+Backend must be running first.
+
+```powershell
+python -m bot.bot
+```
+
+### Discord Commands
+
+| Command | Description |
+|---|---|
+| `!status` | Full office power summary |
+| `!room Drawing Room` | Single room status |
+| `!usage` | Energy usage (kWh) |
+| `!ask Why is power high?` | Free-form question via LLM |
+
+The bot also listens on `/ws/alerts` and posts real alerts to the configured channel.
+
+---
+
+## Running Everything Together
+
+Open **two terminals** (three when the simulator exists):
+
+| Terminal | Command |
+|---|---|
+| 1 — Backend | `uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload` |
+| 2 — Discord bot | `python -m bot.bot` |
+| 3 — Simulator (Phase 3) | `python -m simulator.simulator` |
+
+```text
+Terminal 1 (Backend)  : http://127.0.0.1:8000
+Terminal 2 (Bot)      : Discord Gateway
+Terminal 3 (Simulator): POST -> /api/ingest  [Phase 3]
+```
+
+---
+
+## Testing
+
+### Automated tests
+
+```powershell
+pytest                  # all tests
+pytest tests/test_phase2.py -v   # Phase 2 integration only
+```
+
+### Manual smoke test
+
+| Step | Command | Expected |
+|---|---|---|
+| 1 | `Invoke-RestMethod .../api/health` | `{ status: "ok" }` |
+| 2 | POST `examples/ingest_state_change.json` | `{ accepted: 1, updated: [...] }` |
+| 3 | `Invoke-RestMethod .../api/status` | `total_wattage: 60` |
+| 4 | `!status` in Discord | Matches API data |
+| 5 | `pytest` | All tests pass |
+
+### Demo alert mode
+
+Set in `backend/.env`, then restart the backend:
+
+```env
+DURATION_THRESHOLD_SECONDS=20
+```
+
+Turn all 5 devices in one room ON via ingest and wait up to 30 seconds for a room duration alert.
+
+Detailed test procedures: [doc/SYSTEM_GUIDE.md](doc/SYSTEM_GUIDE.md)
+
+---
+
+## Devices
+
+15 devices total — 2 fans + 3 lights per room.
+
+| Room | Slug | Example device ID |
+|---|---|---|
+| Drawing Room | `drawing_room` | `drawing_room_fan_1` |
+| Work Room 1 | `work_room_1` | `work_room_1_light_2` |
+| Work Room 2 | `work_room_2` | `work_room_2_fan_2` |
+
+Rated wattages used in examples: **fan 60W**, **light 15W**.
+
+---
+
+## Troubleshooting
+
+| Problem | Solution |
+|---|---|
+| `curl` JSON decode error on ingest | Use `curl.exe` with a JSON file or single-quoted `-d '...'` — see [Feeding Data](#feeding-data-to-the-backend) |
+| `Invoke-WebRequest` security prompt | Use `Invoke-RestMethod` or `curl.exe` instead of `curl` |
+| `/api/status` shows 0W after ingest | Confirm ingest returned `200` and check the `updated` list in the response |
+| Discord bot cannot connect | Verify backend is running and `API_BASE_URL` in `bot/.env` is correct |
+| No alerts in Discord | Check `ALERT_CHANNEL_ID`, confirm device is ON outside office hours or duration threshold met |
+| `pytest` import errors | Run from repo root with venv activated; `pythonpath` is set in `pyproject.toml` |
+| SQLite permission errors | Ensure `data/` directory is writable or change `SQLITE_PATH` in `backend/.env` |
+
+---
+
+## Documentation
+
+| Document | Description |
+|---|---|
+| [doc/ARCHITECTURE.md](doc/ARCHITECTURE.md) | System design, components, alert rules, trade-offs |
+| [doc/SYSTEM_GUIDE.md](doc/SYSTEM_GUIDE.md) | End-to-end flows, diagrams, full test guide |
+| [doc/SIMULATOR.md](doc/SIMULATOR.md) | Phase 3 `simulator.py` implementation guide |
+| [DISCORD_BOT_SETUP.md](DISCORD_BOT_SETUP.md) | Step-by-step Discord bot configuration |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Short architecture overview with link to full doc |
+
+---
+
+## Tech Stack
+
+- **Backend:** FastAPI, Pydantic v2, SQLite (stdlib), asyncio
+- **Bot:** discord.py, httpx, Groq API (optional)
+- **Tests:** pytest, pytest-asyncio
+
+No Redis or PostgreSQL required for local development.
