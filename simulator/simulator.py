@@ -100,6 +100,20 @@ def build_device_manifest() -> list[dict[str, str]]:
 DEVICE_MANIFEST = build_device_manifest()
 
 
+def env_float(name: str, default: float) -> float:
+    """Parse a float env var, treating blank values as unset."""
+
+    raw = os.getenv(name)
+    return float(raw) if raw else default
+
+
+def env_int(name: str, default: int | None = None) -> int | None:
+    """Parse an int env var, treating blank values as unset."""
+
+    raw = os.getenv(name)
+    return int(raw) if raw else default
+
+
 # ---------------------------------------------------------------------------
 # Runtime state
 # ---------------------------------------------------------------------------
@@ -297,7 +311,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--probability",
         type=float,
-        default=float(os.getenv("SIMULATOR_TOGGLE_PROB", "0.2")),
+        default=env_float("SIMULATOR_TOGGLE_PROB", 0.2),
         help="Per-tick toggle probability (default: env SIMULATOR_TOGGLE_PROB or 0.2)",
     )
     parser.add_argument(
@@ -309,7 +323,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--seed",
         type=int,
-        default=int(os.getenv("SIMULATOR_SEED", "0")) or None,
+        default=env_int("SIMULATOR_SEED"),
         help="Random seed for deterministic runs (default: env SIMULATOR_SEED or non-deterministic).",
     )
     return parser.parse_args()
@@ -320,7 +334,7 @@ async def run(args: argparse.Namespace) -> None:
 
     api_base_url: str = args.url
     toggle_prob: float = args.probability
-    heartbeat_every_n: int = int(os.getenv("SIMULATOR_HEARTBEAT_EVERY_N", "10"))
+    heartbeat_every_n = env_int("SIMULATOR_HEARTBEAT_EVERY_N", 10) or 10
     seed: int | None = args.seed
     only_room: str | None = args.room
 

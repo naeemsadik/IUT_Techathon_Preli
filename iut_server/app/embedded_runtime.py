@@ -17,12 +17,22 @@ def _env_enabled(name: str) -> bool:
     return os.getenv(name, "false").lower() in {"1", "true", "yes", "on"}
 
 
+def _env_float(name: str, default: float) -> float:
+    raw = os.getenv(name)
+    return float(raw) if raw else default
+
+
+def _env_int(name: str, default: int | None = None) -> int | None:
+    raw = os.getenv(name)
+    return int(raw) if raw else default
+
+
 def _simulator_args() -> argparse.Namespace:
     return argparse.Namespace(
         url=os.getenv("SIMULATOR_API_URL", os.getenv("API_BASE_URL", "http://127.0.0.1:8000")),
-        probability=float(os.getenv("SIMULATOR_TOGGLE_PROB", "0.2")),
+        probability=_env_float("SIMULATOR_TOGGLE_PROB", 0.2),
         room=os.getenv("SIMULATOR_ROOM") or None,
-        seed=int(os.getenv("SIMULATOR_SEED", "0")) or None,
+        seed=_env_int("SIMULATOR_SEED"),
     )
 
 
