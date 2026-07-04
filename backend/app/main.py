@@ -6,9 +6,11 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.alerts import AlertEngine
 from backend.app.api.bot import router as bot_router
+from backend.app.api.history import router as history_router
 from backend.app.api.ingest import router as ingest_router
 from backend.app.api.websocket import router as websocket_router
 from backend.app.config import get_settings
@@ -67,7 +69,21 @@ def create_app() -> FastAPI:
         debug=settings.debug,
         lifespan=lifespan,
     )
+
+    # CORS: allow Vercel deployments + local dev hosts.
+    # Set CORS_ALLOW_ORIGINS="https://your-app.vercel.app,..."
+    # in production. Wildcard "*" is intentionally NOT used so credentials
+    # and Authorization headers remain safe.
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=list(settings.cors_allow_origins),
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization"],
+    )
+
     app.include_router(bot_router)
+    app.include_router(history_router)
     app.include_router(ingest_router)
     app.include_router(websocket_router)
 

@@ -1,0 +1,41 @@
+# =============================================================================
+#  docker-compose.yml — local smoke test for the production container.
+#
+#  Coolify uses its own compose-style deployment; this file is here so you can
+#  `docker compose up --build` on your laptop before pushing to the VPS, to
+#  catch obvious mistakes early.
+# =============================================================================
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: office-energy-backend:local
+    container_name: office-energy-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "8000"
+      DEBUG: "false"
+      OFFICE_START: "09:00"
+      OFFICE_END: "17:00"
+      DURATION_THRESHOLD_SECONDS: "7200"
+      DEVICE_DURATION_THRESHOLD_SECONDS: "3600"
+      ALERT_SWEEP_INTERVAL_SECONDS: "30"
+      SQLITE_PATH: "/app/data/office_energy.db"
+      CORS_ALLOW_ORIGINS: "http://localhost:3000,http://localhost:5500"
+    volumes:
+      # Persistent SQLite database — survives container restarts.
+      - office-energy-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health').status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  office-energy-data:
+    driver: local

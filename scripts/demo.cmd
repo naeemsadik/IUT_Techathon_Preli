@@ -7,6 +7,7 @@ REM
 REM  Usage (from repo root):
 REM
 REM      scripts\demo.cmd             REM full stack (backend + simulator + dashboard)
+REM      scripts\demo.cmd bot         REM also start the Discord bot
 REM      scripts\demo.cmd stop        REM kill everything started above
 REM
 REM ==============================================================================
@@ -20,8 +21,13 @@ for %%I in ("%REPO_ROOT%") do set "REPO_ROOT=%%~fI"
 set "LOG_DIR=%REPO_ROOT%\logs_demo"
 set "MARKER=%LOG_DIR%\.demo-pids.txt"
 
-REM ---- argparse-lite: stop? ------------------------------------------------
+REM ---- argparse-lite: which mode? -----------------------------------------
+set "WITH_BOT=0"
 if /I "%~1"=="stop" goto stop_action
+if /I "%~1"=="bot" set "WITH_BOT=1" & shift
+if /I "%~1"=="--bot" set "WITH_BOT=1" & shift
+if /I "%~1"=="/bot" set "WITH_BOT=1" & shift
+if /I "%~1"=="--with-bot" set "WITH_BOT=1" & shift
 
 REM ---- setup --------------------------------------------------------------
 if not exist "%REPO_ROOT%\.venv\Scripts\python.exe" (
@@ -59,12 +65,24 @@ start "Office-Energy / Simulator" /B cmd /c "set PYTHONUNBUFFERED=1 && cd /d "%R
 echo [start] Dashboard on http://127.0.0.1:5500
 start "Office-Energy / Dashboard" /B cmd /c "set PYTHONUNBUFFERED=1 && cd /d "%REPO_ROOT%" && "%PY%" -m http.server 5500 --directory dashboard 1>"%LOG_DIR%\dashboard.out.log" 2>"%LOG_DIR%\dashboard.err.log""
 
+REM ---- optionally launch the Discord bot in its own window ---------------
+if "%WITH_BOT%"=="1" (
+    if not exist "%REPO_ROOT%\bot\.env" (
+        echo [warn] bot\.env missing - copy bot\.env.example and fill in DISCORD_TOKEN.
+        echo        Bot will be skipped until you create bot\.env.
+    ) else (
+        echo [start] Discord bot (requires DISCORD_TOKEN in bot\.env)
+        start "Office-Energy / Bot" /B cmd /c "set PYTHONUNBUFFERED=1 && cd /d "%REPO_ROOT%" && "%PY%" -m bot.bot 1>"%LOG_DIR%\bot.out.log" 2>"%LOG_DIR%\bot.err.log""
+    )
+)
+
 echo.
 echo ============================================================
 echo Demo stack is up.
 echo   Backend:   http://127.0.0.1:8000/docs
 echo   Dashboard: http://127.0.0.1:5500
 echo   Logs:      %LOG_DIR%\
+if "%WITH_BOT%"=="1" echo   Bot:       running in background
 echo.
 echo To stop everything:
 echo   scripts\demo.cmd stop
@@ -74,10 +92,11 @@ exit /b 0
 
 :stop_action
 REM ---- tear-down: kill processes by title ---------------------------------
-echo [stop] Killing backend, simulator, dashboard windows...
+echo [stop] Killing backend, simulator, dashboard, bot windows...
 taskkill /FI "WINDOWTITLE eq Office-Energy / Backend*"   /T /F >nul 2>&1
 taskkill /FI "WINDOWTITLE eq Office-Energy / Simulator*" /T /F >nul 2>&1
 taskkill /FI "WINDOWTITLE eq Office-Energy / Dashboard*" /T /F >nul 2>&1
+taskkill /FI "WINDOWTITLE eq Office-Energy / Bot*"       /T /F >nul 2>&1
 REM Belt-and-suspenders: also kill any orphaned uvicorn / simulator / http.server
 taskkill /IM uvicorn.exe /T /F >nul 2>&1
 taskkill /IM python.exe /FI "WINDOWTITLE eq Office-Energy*" /T /F >nul 2>&1

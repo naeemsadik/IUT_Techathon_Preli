@@ -99,6 +99,37 @@ class Database:
         )
         return cursor.fetchone() is not None
 
+    def query_alerts_since(self, since: datetime) -> list[AlertLogRow]:
+        """Return alerts created at or after the given timestamp."""
+
+        cursor = self.connection.execute(
+            """
+            SELECT id, alert_type, target, message, severity, created_at, resolved_at
+            FROM alert_log
+            WHERE created_at >= ?
+            ORDER BY created_at ASC
+            """,
+            (since.isoformat(),),
+        )
+        rows: list[AlertLogRow] = []
+        for row in cursor.fetchall():
+            rows.append(
+                AlertLogRow(
+                    id=row["id"],
+                    alert_type=row["alert_type"],
+                    target=row["target"],
+                    message=row["message"],
+                    severity=row["severity"],
+                    created_at=datetime.fromisoformat(row["created_at"]),
+                    resolved_at=(
+                        datetime.fromisoformat(row["resolved_at"])
+                        if row["resolved_at"]
+                        else None
+                    ),
+                )
+            )
+        return rows
+
     def create_alert(
         self,
         alert_id: str,

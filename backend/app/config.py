@@ -35,6 +35,7 @@ class BackendSettings:
     device_duration_threshold: timedelta
     sqlite_path: str
     alert_sweep_interval_seconds: int
+    cors_allow_origins: tuple[str, ...]
 
 
 @lru_cache
@@ -52,8 +53,27 @@ def get_settings() -> BackendSettings:
             return timedelta(seconds=default)
         return timedelta(seconds=seconds)
 
+    def _parse_csv(value: str | None) -> tuple[str, ...]:
+        if not value:
+            return ()
+        return tuple(
+            origin.strip() for origin in value.split(",") if origin.strip()
+        )
+
+    raw_cors = os.getenv("CORS_ALLOW_ORIGINS", "")
+    cors_origins = _parse_csv(raw_cors)
+    if not cors_origins:
+        # Sensible development defaults; Vercel preview URLs are covered by
+        # CORS_ALLOW_ORIGINS in production.
+        cors_origins = (
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:5500",
+            "http://127.0.0.1:5500",
+        )
+
     return BackendSettings(
-        host=os.getenv("HOST", "127.0.0.1"),
+        host=os.getenv("HOST", "0.0.0.0"),
         port=int(os.getenv("PORT", "8000")),
         debug=os.getenv("DEBUG", "false").lower() in {"1", "true", "yes", "on"},
         version="0.1.0",
@@ -69,4 +89,5 @@ def get_settings() -> BackendSettings:
         alert_sweep_interval_seconds=int(
             os.getenv("ALERT_SWEEP_INTERVAL_SECONDS", "30")
         ),
+        cors_allow_origins=cors_origins,
     )

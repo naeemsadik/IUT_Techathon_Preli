@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find backend:*)",
+      "Bash(xargs grep:*)",
+      "Bash(find . -path ./node_modules -prune -o -path ./.next -prune -o -path ./.git -prune -o -path ./backend/services/shared/cp_shared/__pycache__ -prune -o -type f -iname *email* -print)",
+      "Bash(find . -path ./node_modules -prune -o -path ./.next -prune -o -path ./.git -prune -o -path ./__pycache__ -prune -o -path */__pycache__ -prune -o -type f -iname *verif* -print)",
+      "Bash(find . -path ./node_modules -prune -o -path ./.next -prune -o -path ./.git -prune -o -path */__pycache__ -prune -o -type f \\\\\\(-iname *mail* -o -iname smtp* \\\\\\) -print)",
+      "Bash(grep -ri \"autocomplete\\\\|typeahead\\\\|combobox\\\\|suggestion\" client/src --include=*.jsx --include=*.js -l)",
+      "Bash(grep -rn \"search\\\\|Search\" client/src/components --include=*.jsx -l)",
+      "Bash(find client/src/app -type f -name *.jsx -o -name *.js -o -name *.tsx -o -name *.ts)",
+      "Bash(grep -ri \"search input\\\\|SearchInput\\\\|<input.*search\" client/src --include=*.jsx -l)",
+      "Bash(grep -rn \"title.*ilike\\\\|title.ilike\\\\|ilike.*title\\\\|ILIKE\\\\|search.*title\" client/src backend/services --include=*.py --include=*.js --include=*.jsx)",
+      "Bash(grep -n \"Problem Set\\\\|problemSearch\\\\|filteredProblems\\\\|pagedLibraryProblems\" client/src/app/host/dashboard/contests/[id]/edit/page.jsx)",
+      "Bash(find backend/alembic -type f -name *.py)",
+      "Bash(find . -path ./node_modules -prune -o -path ./.next -prune -o -path ./.git -prune -o -path */__pycache__ -prune -o -type f \\\\\\(-name *.py -o -name *.jsx -o -name *.js -o -name *.ts -o -name *.tsx \\\\\\) -print)",
+      "Bash(grep -rn \"search_problems\\\\|problem.*search\\\\|search.*problem\" backend/services --include=*.py)",
+      "Bash(grep -n \"def list_admin_users\\\\|def admin_users\\\\|full_name\\\\|username\\\\|email\" backend/services/gateway/app/auth_routes/*.py)",
+      "Read(//c/Users/User/.puku-cli/plans/**)",
+      "Bash(mkdir -p \"C:\\\\Users\\\\User\\\\.puku-cli\\\\plans\")"
+    ]
+  }
+}

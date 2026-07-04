@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 35% 10%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 35% 10%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 188 95% 60%;
+    --primary-foreground: 222 47% 6%;
+
+    --secondary: 222 30% 16%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 222 30% 16%;
+    --muted-foreground: 215 20% 70%;
+
+    --accent: 188 95% 60%;
+    --accent-foreground: 222 47% 6%;
+
+    --destructive: 0 75% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --success: 142 70% 45%;
+    --success-foreground: 210 40% 98%;
+
+    --warning: 38 95% 55%;
+    --warning-foreground: 222 47% 6%;
+
+    --border: 222 25% 22%;
+    --input: 222 25% 22%;
+    --ring: 188 95% 60%;
+
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  html { color-scheme: dark; }
+}
+
+/* Subtle ambient glow for hero elements */
+.bg-ambient {
+  background-image:
+    radial-gradient(900px 500px at 8% -10%, hsl(258 90% 60% / 0.10), transparent 60%),
+    radial-gradient(700px 400px at 110% 0%, hsl(188 95% 60% / 0.08), transparent 60%);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.4); }
