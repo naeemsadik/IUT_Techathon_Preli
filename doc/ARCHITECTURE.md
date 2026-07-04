@@ -258,6 +258,7 @@ Restart the backend after changing env vars.
 
 ## 12. Related Documents
 
+- [HIGH_LEVEL_DIAGRAMS.md](./HIGH_LEVEL_DIAGRAMS.md) — Phase 3 system diagrams (memory/SQLite vs Redis/PostgreSQL)
 - [README.md](../README.md) — Local setup and onboarding
 - [SYSTEM_GUIDE.md](./SYSTEM_GUIDE.md) — End-to-end flows, diagrams, and test procedures
 - [SIMULATOR.md](./SIMULATOR.md) — Building `simulator.py`

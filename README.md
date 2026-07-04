@@ -330,6 +330,7 @@ Rated wattages used in examples: **fan 60W**, **light 15W**.
 
 | Document | Description |
 |---|---|
+| [doc/HIGH_LEVEL_DIAGRAMS.md](doc/HIGH_LEVEL_DIAGRAMS.md) | Phase 3 system diagrams — Version 1 (memory + SQLite) and Version 2 (Redis + PostgreSQL) |
 | [doc/ARCHITECTURE.md](doc/ARCHITECTURE.md) | System design, components, alert rules, trade-offs |
 | [doc/SYSTEM_GUIDE.md](doc/SYSTEM_GUIDE.md) | End-to-end flows, diagrams, full test guide |
 | [doc/SIMULATOR.md](doc/SIMULATOR.md) | Phase 3 `simulator.py` implementation guide |
